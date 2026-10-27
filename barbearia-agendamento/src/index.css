@@ -14,6 +14,16 @@ body {
   font-family: var(--font-display);
 }
 
+/* Mobile-first: evitar zoom no iOS e alvos de toque maiores */
+@media (max-width: 640px) {
+  input, select, textarea, button {
+    font-size: 16px;
+  }
+  button {
+    min-height: 44px;
+  }
+}
+
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(20px) rotate(-1deg); }
   to { opacity: 1; transform: translateY(0) rotate(0); }

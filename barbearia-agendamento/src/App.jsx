@@ -43,6 +43,25 @@ export default function App() {
 
   useEffect(() => { loadData(); }, []);
 
+  // Atualização em tempo real da disponibilidade (polling)
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const avail = await api.getAvailability();
+        setAvailableDates(avail.dates);
+        setAvailableSlots(avail.slots);
+      } catch {}
+    }, 15000);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') loadData();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, []);
+
   const handleNameSubmit = (name) => {
     setClientName(name);
     setStep(STEPS.IDENTIFY);

@@ -18,6 +18,7 @@ export default function Dashboard({ onLogout }) {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [toast, setToast] = useState(null);
+  const [lastSeenIds, setLastSeenIds] = useState(new Set());
 
   useEffect(() => {
     if (!toast) return;
@@ -38,6 +39,7 @@ export default function Dashboard({ onLogout }) {
       setServices(svcs);
       setAvailableDates(avail.dates);
       setSlotTemplate(avail.template);
+      setLastSeenIds(new Set(appts.map((a) => a.id)));
     } catch (e) {
       setMessage(e.message);
     } finally {
@@ -46,6 +48,22 @@ export default function Dashboard({ onLogout }) {
   };
 
   useEffect(() => { loadAll(); }, []);
+
+  // Notificações automáticas: polling de novos agendamentos
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const appts = await api.getAppointments();
+        const newOnes = appts.filter((a) => !lastSeenIds.has(a.id));
+        if (newOnes.length > 0) {
+          setToast({ type: 'success', text: `Novo agendamento: ${newOnes[0].clientName}` });
+          setLastSeenIds(new Set(appts.map((a) => a.id)));
+        }
+        setAppointments(appts);
+      } catch {}
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [lastSeenIds]);
 
   const handleCancel = async (id) => {
     try {
@@ -141,6 +159,34 @@ export default function Dashboard({ onLogout }) {
 
         <p className="text-xs text-zinc-500">As alterações só são aplicadas após clicar em "Salvar".</p>
         {message && <p className="text-sm text-zinc-300">{message}</p>}
+
+        {/* Painel do dia */}
+        {(() => {
+          const todayStr = new Date().toISOString().split('T')[0];
+          const todayAppts = appointments
+            .filter((a) => a.date === todayStr)
+            .sort((a, b) => a.time.localeCompare(b.time));
+          const revenue = todayAppts.reduce((sum, a) => sum + (Number(a.service?.price) || 0), 0);
+          const next = todayAppts[0];
+          return (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="border-2 border-zinc-800 bg-black/60 p-4">
+                <p className="text-xs font-display uppercase text-zinc-400">Agendamentos hoje</p>
+                <p className="text-2xl font-bold text-white mt-1">{todayAppts.length}</p>
+              </div>
+              <div className="border-2 border-zinc-800 bg-black/60 p-4">
+                <p className="text-xs font-display uppercase text-zinc-400">Receita prevista</p>
+                <p className="text-2xl font-bold text-white mt-1">R$ {revenue.toFixed(2).replace('.', ',')}</p>
+              </div>
+              <div className="border-2 border-zinc-800 bg-black/60 p-4">
+                <p className="text-xs font-display uppercase text-zinc-400">Próximo</p>
+                <p className="text-lg font-bold text-white mt-1">
+                  {next ? `${next.time} — ${next.clientName}` : 'Nenhum'}
+                </p>
+              </div>
+            </div>
+          );
+        })()}
 
         <div className="flex gap-2 border-b border-zinc-800">
           {TABS.map((t) => (
