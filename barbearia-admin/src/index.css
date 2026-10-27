@@ -1,0 +1,25 @@
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+:root {
+  --font-display: 'Oswald', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+
+body {
+  font-family: var(--font-body);
+  background: #050505;
+  color: #fff;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.graffiti-wall {
+  background-color: #030303;
+  background-image:
+    radial-gradient(circle at 15% 20%, rgba(255,255,255,0.08) 0%, transparent 25%),
+    radial-gradient(circle at 85% 70%, rgba(255,255,255,0.06) 0%, transparent 30%),
+    repeating-linear-gradient(45deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 14px);
+}

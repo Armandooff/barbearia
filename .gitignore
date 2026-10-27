@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Environment
+.env
+.env.local
+
+# API data (generated)
+barbearia-api/data.json
+
+# OS
+.DS_Store
+Thumbs.db
