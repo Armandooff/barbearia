@@ -66,6 +66,7 @@ export default function CalendarSlots({ availableDates, availableSlots, client, 
       const message = `NOVO AGENDAMENTO - ${BARBERSHOP_INFO.name.toUpperCase()}
 
 Cliente: ${client?.name || ''}
+Barbeiro: ${client?.barber?.name || ''}
 Data: ${dateStr} (${weekday})
 Horário: ${selectedTime}
 Serviço: ${service?.name || ''}
@@ -209,6 +210,7 @@ Aguardo confirmação!`;
             </p>
             <div className="border-2 border-zinc-800 bg-zinc-900/60 p-4 text-sm text-zinc-200 space-y-1">
               <p><span className="text-white font-bold">Cliente:</span> {client?.name}</p>
+              <p><span className="text-white font-bold">Barbeiro:</span> {client?.barber?.name}</p>
               <p><span className="text-white font-bold">Data:</span> {formattedDate} ({weekday})</p>
               <p><span className="text-white font-bold">Horário:</span> {selectedTime}</p>
               <p><span className="text-white font-bold">Serviço:</span> {client?.service?.name}</p>

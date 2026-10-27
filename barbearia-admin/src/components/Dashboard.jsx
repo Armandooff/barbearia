@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react';
 const TABS = [
   { id: 'appointments', label: 'Agendamentos' },
   { id: 'services', label: 'Serviços' },
+  { id: 'barbers', label: 'Barbeiros' },
   { id: 'availability', label: 'Disponibilidade' },
 ];
 
@@ -12,6 +13,7 @@ export default function Dashboard({ onLogout }) {
   const [tab, setTab] = useState('appointments');
   const [appointments, setAppointments] = useState([]);
   const [services, setServices] = useState([]);
+  const [barbers, setBarbers] = useState([]);
   const [availableDates, setAvailableDates] = useState([]);
   const [slotTemplate, setSlotTemplate] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,13 +31,15 @@ export default function Dashboard({ onLogout }) {
     setLoading(true);
     setMessage('');
     try {
-      const [appts, svcs, avail] = await Promise.all([
+      const [appts, svcs, brb, avail] = await Promise.all([
         api.getAppointments(),
         api.getServices(),
+        api.getBarbers(),
         api.getAvailability(),
       ]);
       setAppointments(appts);
       setServices(svcs);
+      setBarbers(brb);
       setAvailableDates(avail.dates);
       setSlotTemplate(avail.template);
     } catch (e) {
@@ -99,6 +103,28 @@ export default function Dashboard({ onLogout }) {
 
   const addService = () => setServices((prev) => [...prev, { id: crypto.randomUUID(), name: 'Novo serviço', duration: 30, price: 0 }]);
   const removeService = (id) => setServices((prev) => prev.filter((s) => s.id !== id));
+
+  const handleSaveBarbers = async () => {
+    setSaving(true);
+    setMessage('');
+    try {
+      const updated = await api.putBarbers(barbers);
+      setBarbers(updated);
+      setMessage('Barbeiros salvos.');
+      setToast({ type: 'success', text: 'Barbeiros salvos com sucesso!' });
+    } catch (e) {
+      setMessage(e.message);
+      setToast({ type: 'error', text: e.message || 'Erro ao salvar barbeiros.' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateBarber = (id, field, value) => {
+    setBarbers((prev) => prev.map((b) => (b.id === id ? { ...b, [field]: value } : b)));
+  };
+  const addBarber = () => setBarbers((prev) => [...prev, { id: crypto.randomUUID(), name: 'Novo barbeiro', specialty: '' }]);
+  const removeBarber = (id) => setBarbers((prev) => prev.filter((b) => b.id !== id));
 
   const [newDate, setNewDate] = useState('');
   const [newTime, setNewTime] = useState('');
@@ -229,6 +255,45 @@ export default function Dashboard({ onLogout }) {
                 <button onClick={handleSaveServices} disabled={saving}
                   className="px-4 py-2 bg-white text-black font-bold font-display border-2 border-white hover:bg-black hover:text-white disabled:bg-zinc-800 disabled:text-zinc-500 transition">
                   {saving ? <span className="inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Salvando...</span> : 'Salvar serviços'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {tab === 'barbers' && (
+            <div className="space-y-4">
+              <div className="flex justify-end">
+                <button onClick={addBarber}
+                  className="px-4 py-2 bg-white text-black font-bold font-display border-2 border-white hover:bg-black hover:text-white transition">
+                  + Adicionar barbeiro
+                </button>
+              </div>
+              <div className="space-y-3">
+                {barbers.map((b) => (
+                  <div key={b.id} className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-end border-2 border-zinc-800 p-3">
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-400 mb-1">Nome</label>
+                      <input value={b.name} onChange={(e) => updateBarber(b.id, 'name', e.target.value)}
+                        className="w-full px-3 py-2 border-2 border-zinc-700 bg-black text-white text-sm focus:outline-none focus:border-white transition" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-400 mb-1">Especialidade</label>
+                      <input value={b.specialty} onChange={(e) => updateBarber(b.id, 'specialty', e.target.value)}
+                        className="w-full px-3 py-2 border-2 border-zinc-700 bg-black text-white text-sm focus:outline-none focus:border-white transition" />
+                    </div>
+                    <div>
+                      <button onClick={() => removeBarber(b.id)}
+                        className="w-full px-3 py-2 border-2 border-red-500 text-red-400 font-bold font-display hover:bg-red-500 hover:text-white transition">
+                        Remover
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-end">
+                <button onClick={handleSaveBarbers} disabled={saving}
+                  className="px-4 py-2 bg-white text-black font-bold font-display border-2 border-white hover:bg-black hover:text-white disabled:bg-zinc-800 disabled:text-zinc-500 transition">
+                  {saving ? <span className="inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Salvando...</span> : 'Salvar barbeiros'}
                 </button>
               </div>
             </div>

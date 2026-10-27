@@ -22,6 +22,12 @@ const defaultServices = [
   { id: 'combo', name: 'Corte + Barba', duration: 50, price: 55 },
 ];
 
+const defaultBarbers = [
+  { id: 'gui', name: 'Gui', specialty: 'Cortes e degradê' },
+  { id: 'leo', name: 'Léo', specialty: 'Barba e acabamento' },
+  { id: 'rafa', name: 'Rafa', specialty: 'Sobrancelha e design' },
+];
+
 function defaultDates() {
   const today = new Date();
   const dates = [];
@@ -44,6 +50,7 @@ function rebuildSlots(dates, template) {
 
 let state = {
   services: defaultServices,
+  barbers: defaultBarbers,
   availableDates: defaultDates(),
   slotTemplate: defaultTemplate,
   availableSlots: null,
@@ -88,6 +95,7 @@ function authMiddleware(req, res, next) {
 
 // Public routes
 app.get('/api/services', (req, res) => res.json(state.services));
+app.get('/api/barbers', (req, res) => res.json(state.barbers));
 
 app.get('/api/availability', (req, res) => {
   res.json({
@@ -98,12 +106,13 @@ app.get('/api/availability', (req, res) => {
 });
 
 app.post('/api/appointments', (req, res) => {
-  const { clientName, serviceId, date, time } = req.body || {};
+  const { clientName, serviceId, barberId, date, time } = req.body || {};
   if (!clientName || !serviceId || !date || !time) {
     return res.status(400).json({ error: 'Dados incompletos' });
   }
   const service = state.services.find((s) => s.id === serviceId);
   if (!service) return res.status(400).json({ error: 'Serviço inválido' });
+  const barber = state.barbers.find((b) => b.id === barberId) || state.barbers[0];
   if (!state.availableDates.includes(date)) return res.status(400).json({ error: 'Data indisponível' });
   if (!(state.availableSlots[date] || []).includes(time)) {
     return res.status(400).json({ error: 'Horário indisponível' });
@@ -112,6 +121,7 @@ app.post('/api/appointments', (req, res) => {
     id: (crypto.randomUUID && crypto.randomUUID()) || String(Date.now()),
     clientName,
     service,
+    barber,
     date,
     time,
     createdAt: new Date().toISOString(),
@@ -151,6 +161,14 @@ app.put('/api/services', authMiddleware, (req, res) => {
   state.services = services;
   persist();
   res.json(state.services);
+});
+
+app.put('/api/barbers', authMiddleware, (req, res) => {
+  const { barbers } = req.body || {};
+  if (!Array.isArray(barbers)) return res.status(400).json({ error: 'Lista inválida' });
+  state.barbers = barbers;
+  persist();
+  res.json(state.barbers);
 });
 
 app.put('/api/availability', authMiddleware, (req, res) => {
