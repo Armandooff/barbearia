@@ -21,7 +21,6 @@ export default function App() {
   const [booking, setBooking] = useState(null);
 
   const [services, setServices] = useState([]);
-  const [barbers, setBarbers] = useState([]);
   const [availableDates, setAvailableDates] = useState([]);
   const [availableSlots, setAvailableSlots] = useState({});
   const [loading, setLoading] = useState(true);
@@ -31,9 +30,8 @@ export default function App() {
     setLoading(true);
     setError('');
     try {
-      const [svc, brb, avail] = await Promise.all([api.getServices(), api.getBarbers(), api.getAvailability()]);
+      const [svc, avail] = await Promise.all([api.getServices(), api.getAvailability()]);
       setServices(svc);
-      setBarbers(brb);
       setAvailableDates(avail.dates);
       setAvailableSlots(avail.slots);
     } catch (e) {
@@ -61,7 +59,6 @@ export default function App() {
       await api.createAppointment({
         clientName: client.name,
         serviceId: client.service.id,
-        barberId: client.barber?.id,
         date,
         time,
       });
@@ -116,7 +113,6 @@ export default function App() {
       {step === STEPS.IDENTIFY && (
         <IdentificationForm
           services={services}
-          barbers={barbers}
           clientName={clientName}
           onConfirm={handleIdentifyConfirm}
           onBack={() => setStep(STEPS.LANDING)}

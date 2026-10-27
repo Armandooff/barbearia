@@ -1,18 +1,15 @@
 import { useState } from 'react';
-import { Scissors, User } from 'lucide-react';
+import { Scissors } from 'lucide-react';
 
-export default function IdentificationForm({ services, barbers, clientName, onConfirm, onBack }) {
+export default function IdentificationForm({ services, clientName, onConfirm, onBack }) {
   const list = services && services.length ? services : [];
-  const barberList = barbers && barbers.length ? barbers : [];
   const [serviceId, setServiceId] = useState(list.length ? list[0].id : '');
-  const [barberId, setBarberId] = useState(barberList.length ? barberList[0].id : '');
 
   const handleSubmit = (e) => {
     e.preventDefault();
     const service = list.find((s) => s.id === serviceId);
-    const barber = barberList.find((b) => b.id === barberId) || barberList[0];
     if (!service) return;
-    onConfirm({ service, barber });
+    onConfirm({ service });
   };
 
   return (
@@ -22,7 +19,7 @@ export default function IdentificationForm({ services, barbers, clientName, onCo
         <header className="space-y-2">
           <h2 className="font-display text-4xl">Escolha o serviço</h2>
           <p className="text-zinc-400">
-            {clientName ? `Fala, ${clientName}! ` : ''}Selecione o serviço e o barbeiro.
+            {clientName ? `Fala, ${clientName}! ` : ''}Selecione o serviço desejado.
           </p>
         </header>
 
@@ -52,35 +49,6 @@ export default function IdentificationForm({ services, barbers, clientName, onCo
               );
             })}
           </div>
-
-          {barberList.length > 0 && (
-            <div className="space-y-3">
-              <p className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-                <User className="w-4 h-4 text-white" /> Barbeiro
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {barberList.map((b) => {
-                  const selected = barberId === b.id;
-                  return (
-                    <button
-                      key={b.id}
-                      type="button"
-                      onClick={() => setBarberId(b.id)}
-                      className={[
-                        'text-left p-4 border-2 transition-all hover-lift',
-                        selected
-                          ? 'border-white bg-white text-black'
-                          : 'border-zinc-700 bg-black/60 text-white hover:border-white',
-                      ].join(' ')}
-                    >
-                      <p className="font-bold">{b.name}</p>
-                      <p className="text-xs mt-1 opacity-80">{b.specialty}</p>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
 
           <div className="flex gap-3">
             <button type="button" onClick={onBack}

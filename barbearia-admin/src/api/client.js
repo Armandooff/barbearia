@@ -29,12 +29,8 @@ export const api = {
   setToken,
   getServices: () => request('/api/services'),
   putServices: (services) => request('/api/services', { method: 'PUT', body: JSON.stringify({ services }) }),
-  getBarbers: () => request('/api/barbers'),
-  putBarbers: (barbers) => request('/api/barbers', { method: 'PUT', body: JSON.stringify({ barbers }) }),
   getAvailability: () => request('/api/availability'),
   putAvailability: (payload) => request('/api/availability', { method: 'PUT', body: JSON.stringify(payload) }),
   getAppointments: () => request('/api/appointments'),
   deleteAppointment: (id) => request('/api/appointments/' + id, { method: 'DELETE' }),
-  getReviews: () => request('/api/reviews'),
-  deleteReview: (id) => request('/api/reviews/' + id, { method: 'DELETE' }),
 };

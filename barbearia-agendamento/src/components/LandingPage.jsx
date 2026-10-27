@@ -1,33 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { BARBERSHOP_INFO } from '../data/mocks';
-import { api } from '../api/client';
-import { Scissors, MapPin, Phone, Camera, Calendar, ArrowDown, User, Star } from 'lucide-react';
+import { Scissors, MapPin, Phone, Camera, Calendar, ArrowDown, User } from 'lucide-react';
 import GraffitiWall from './GraffitiWall';
 import BarberIllustration from './BarberIllustration';
 
 export default function LandingPage({ onNameSubmit }) {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
-  const [reviews, setReviews] = useState([]);
-  const [reviewName, setReviewName] = useState('');
-  const [reviewRating, setReviewRating] = useState(5);
-  const [reviewComment, setReviewComment] = useState('');
-
-  useEffect(() => {
-    api.getReviews().then(setReviews).catch(() => {});
-  }, []);
-
-  const submitReview = async (e) => {
-    e.preventDefault();
-    if (!reviewName.trim()) return;
-    try {
-      const r = await api.createReview({ name: reviewName.trim(), rating: reviewRating, comment: reviewComment.trim() });
-      setReviews((prev) => [r, ...prev]);
-      setReviewName('');
-      setReviewComment('');
-      setReviewRating(5);
-    } catch {}
-  };
 
   const scrollToBooking = () => {
     const el = document.getElementById('agendamento');
@@ -188,64 +167,6 @@ export default function LandingPage({ onNameSubmit }) {
           />
         </div>
         <p className="text-center text-zinc-400 text-sm">{BARBERSHOP_INFO.address}</p>
-      </section>
-
-      {/* Avaliações */}
-      <section className="max-w-4xl mx-auto px-6 py-16 space-y-6">
-        <div className="text-center space-y-2">
-          <h2 className="font-display text-3xl text-white">Avaliações</h2>
-          <p className="text-zinc-400 text-sm">O que os clientes dizem.</p>
-        </div>
-        {reviews.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {reviews.slice(0, 6).map((r) => (
-              <div key={r.id} className="border-2 border-zinc-800 bg-black/60 p-5 space-y-2">
-                <div className="flex items-center gap-1 text-white">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} className={`w-4 h-4 ${i < r.rating ? 'fill-white' : 'opacity-30'}`} />
-                  ))}
-                </div>
-                <p className="text-zinc-300 text-sm italic">"{r.comment || 'Sem comentário.'}"</p>
-                <p className="text-white font-display text-sm">— {r.name}</p>
-              </div>
-            ))}
-          </div>
-        )}
-        <form onSubmit={submitReview} className="max-w-md mx-auto space-y-3 border-2 border-zinc-800 p-5">
-          <p className="font-display text-lg text-white">Deixe sua avaliação</p>
-          <input
-            value={reviewName}
-            onChange={(e) => setReviewName(e.target.value)}
-            placeholder="Seu nome"
-            className="w-full px-3 py-2 border-2 border-zinc-700 bg-black text-white text-sm focus:outline-none focus:border-white transition"
-          />
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-zinc-400">Nota:</span>
-            {[1,2,3,4,5].map((n) => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => setReviewRating(n)}
-                className={`w-8 h-8 border-2 font-bold ${reviewRating >= n ? 'bg-white text-black border-white' : 'border-zinc-700 text-zinc-400'}`}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
-          <textarea
-            value={reviewComment}
-            onChange={(e) => setReviewComment(e.target.value)}
-            placeholder="Comentário (opcional)"
-            className="w-full px-3 py-2 border-2 border-zinc-700 bg-black text-white text-sm focus:outline-none focus:border-white transition"
-            rows={3}
-          />
-          <button
-            type="submit"
-            className="w-full px-4 py-2 bg-white text-black font-bold font-display border-2 border-white hover:bg-black hover:text-white transition"
-          >
-            Enviar avaliação
-          </button>
-        </form>
       </section>
 
       {/* Contato */}

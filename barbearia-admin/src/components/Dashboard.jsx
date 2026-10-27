@@ -5,23 +5,19 @@ import { Loader2 } from 'lucide-react';
 const TABS = [
   { id: 'appointments', label: 'Agendamentos' },
   { id: 'services', label: 'Serviços' },
-  { id: 'barbers', label: 'Barbeiros' },
   { id: 'availability', label: 'Disponibilidade' },
-  { id: 'reviews', label: 'Avaliações' },
 ];
 
 export default function Dashboard({ onLogout }) {
   const [tab, setTab] = useState('appointments');
   const [appointments, setAppointments] = useState([]);
   const [services, setServices] = useState([]);
-  const [barbers, setBarbers] = useState([]);
-  const [reviews, setReviews] = useState([]);
   const [availableDates, setAvailableDates] = useState([]);
   const [slotTemplate, setSlotTemplate] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
-  const [toast, setToast] = useState(null); // { type: 'success'|'error', text }
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     if (!toast) return;
@@ -33,18 +29,14 @@ export default function Dashboard({ onLogout }) {
     setLoading(true);
     setMessage('');
     try {
-      const [appts, svcs, brb, avail, revs] = await Promise.all([
+      const [appts, svcs, avail] = await Promise.all([
         api.getAppointments(),
         api.getServices(),
-        api.getBarbers(),
         api.getAvailability(),
-        api.getReviews(),
       ]);
       setAppointments(appts);
       setServices(svcs);
-      setBarbers(brb);
       setAvailableDates(avail.dates);
-      setReviews(revs);
       setSlotTemplate(avail.template);
     } catch (e) {
       setMessage(e.message);
@@ -61,20 +53,9 @@ export default function Dashboard({ onLogout }) {
       setAppointments((prev) => prev.filter((a) => a.id !== id));
       setMessage('Agendamento cancelado.');
       setToast({ type: 'success', text: 'Agendamento cancelado.' });
-
-  const handleDeleteReview = async (id) => {
-    try {
-      await api.deleteReview(id);
-      setReviews((prev) => prev.filter((r) => r.id !== id));
-      setMessage('Avaliação removida.');
-      setToast({ type: 'success', text: 'Avaliação removida.' });
     } catch (e) {
       setMessage(e.message);
-      setToast({ type: 'error', text: e.message || 'Erro ao remover avaliação.' });
-    }
-  };
-    } catch (e) {
-      setMessage(e.message);
+      setToast({ type: 'error', text: e.message || 'Erro ao cancelar.' });
     }
   };
 
@@ -120,28 +101,6 @@ export default function Dashboard({ onLogout }) {
   const addService = () => setServices((prev) => [...prev, { id: crypto.randomUUID(), name: 'Novo serviço', duration: 30, price: 0 }]);
   const removeService = (id) => setServices((prev) => prev.filter((s) => s.id !== id));
 
-  const handleSaveBarbers = async () => {
-    setSaving(true);
-    setMessage('');
-    try {
-      const updated = await api.putBarbers(barbers);
-      setBarbers(updated);
-      setMessage('Barbeiros salvos.');
-      setToast({ type: 'success', text: 'Barbeiros salvos com sucesso!' });
-    } catch (e) {
-      setMessage(e.message);
-      setToast({ type: 'error', text: e.message || 'Erro ao salvar barbeiros.' });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const updateBarber = (id, field, value) => {
-    setBarbers((prev) => prev.map((b) => (b.id === id ? { ...b, [field]: value } : b)));
-  };
-  const addBarber = () => setBarbers((prev) => [...prev, { id: crypto.randomUUID(), name: 'Novo barbeiro', specialty: '' }]);
-  const removeBarber = (id) => setBarbers((prev) => prev.filter((b) => b.id !== id));
-
   const [newDate, setNewDate] = useState('');
   const [newTime, setNewTime] = useState('');
 
@@ -180,8 +139,8 @@ export default function Dashboard({ onLogout }) {
           </button>
         </header>
 
-        {message && <p className="text-sm text-zinc-300">{message}</p>}
         <p className="text-xs text-zinc-500">As alterações só são aplicadas após clicar em "Salvar".</p>
+        {message && <p className="text-sm text-zinc-300">{message}</p>}
 
         <div className="flex gap-2 border-b border-zinc-800">
           {TABS.map((t) => (
@@ -276,67 +235,6 @@ export default function Dashboard({ onLogout }) {
             </div>
           )}
 
-          {tab === 'barbers' && (
-            <div className="space-y-4">
-              <div className="flex justify-end">
-                <button onClick={addBarber}
-                  className="px-4 py-2 bg-white text-black font-bold font-display border-2 border-white hover:bg-black hover:text-white transition">
-                  + Adicionar barbeiro
-                </button>
-              </div>
-              <div className="space-y-3">
-                {barbers.map((b) => (
-                  <div key={b.id} className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-end border-2 border-zinc-800 p-3">
-                    <div>
-                      <label className="block text-xs font-medium text-zinc-400 mb-1">Nome</label>
-                      <input value={b.name} onChange={(e) => updateBarber(b.id, 'name', e.target.value)}
-                        className="w-full px-3 py-2 border-2 border-zinc-700 bg-black text-white text-sm focus:outline-none focus:border-white transition" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-zinc-400 mb-1">Especialidade</label>
-                      <input value={b.specialty} onChange={(e) => updateBarber(b.id, 'specialty', e.target.value)}
-                        className="w-full px-3 py-2 border-2 border-zinc-700 bg-black text-white text-sm focus:outline-none focus:border-white transition" />
-                    </div>
-                    <div>
-                      <button onClick={() => removeBarber(b.id)}
-                        className="w-full px-3 py-2 border-2 border-red-500 text-red-400 font-bold font-display hover:bg-red-500 hover:text-white transition">
-                        Remover
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="flex justify-end">
-                <button onClick={handleSaveBarbers} disabled={saving}
-                  className="px-4 py-2 bg-white text-black font-bold font-display border-2 border-white hover:bg-black hover:text-white disabled:bg-zinc-800 disabled:text-zinc-500 transition">
-                  {saving ? <span className="inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Salvando...</span> : 'Salvar barbeiros'}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {tab === 'reviews' && (
-            reviews.length === 0 ? (
-              <p className="text-zinc-500 text-sm">Nenhuma avaliação registrada.</p>
-            ) : (
-              <div className="space-y-3">
-                {reviews.map((r) => (
-                  <div key={r.id} className="border-2 border-zinc-800 p-4 flex items-start justify-between gap-4">
-                    <div className="space-y-1">
-                      <p className="text-white font-bold font-display">{r.name} <span className="text-zinc-400 text-xs">({r.rating}/5)</span></p>
-                      <p className="text-zinc-300 text-sm">{r.comment || 'Sem comentário.'}</p>
-                      <p className="text-zinc-500 text-xs">{new Date(r.createdAt).toLocaleDateString('pt-BR')}</p>
-                    </div>
-                    <button onClick={() => handleDeleteReview(r.id)}
-                      className="px-3 py-1 border-2 border-red-500 text-red-400 font-bold font-display hover:bg-red-500 hover:text-white transition">
-                      Remover
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )
-          )}
-
           {tab === 'availability' && (
             <div className="space-y-6">
               <div className="space-y-2">
@@ -388,18 +286,18 @@ export default function Dashboard({ onLogout }) {
             </div>
           )}
         </div>
-      </div>
 
-      {/* Toast */}
-      {toast && (
-        <div className={`fixed bottom-6 right-6 px-4 py-3 border-2 font-bold font-display text-sm shadow-lg transition-all ${
-          toast.type === 'success'
-            ? 'bg-white text-black border-white'
-            : 'bg-red-600 text-white border-red-600'
-        }`}>
-          {toast.text}
-        </div>
-      )}
+        {/* Toast */}
+        {toast && (
+          <div className={`fixed bottom-6 right-6 px-4 py-3 border-2 font-bold font-display text-sm shadow-lg transition-all ${
+            toast.type === 'success'
+              ? 'bg-white text-black border-white'
+              : 'bg-red-600 text-white border-red-600'
+          }`}>
+            {toast.text}
+          </div>
+        )}
+      </div>
     </section>
   );
 }

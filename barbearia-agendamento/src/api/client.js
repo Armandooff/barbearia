@@ -15,11 +15,7 @@ async function request(path, options = {}) {
 
 export const api = {
   getServices: () => request('/api/services'),
-  getBarbers: () => request('/api/barbers'),
   getAvailability: () => request('/api/availability'),
-  getReviews: () => request('/api/reviews'),
-  createReview: (payload) =>
-    request('/api/reviews', { method: 'POST', body: JSON.stringify(payload) }),
   createAppointment: (payload) =>
     request('/api/appointments', { method: 'POST', body: JSON.stringify(payload) }),
 };

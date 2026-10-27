@@ -24,12 +24,6 @@ export const AVAILABLE_SLOTS = AVAILABLE_DATES.reduce((acc, date) => {
   return acc;
 }, {});
 
-export const BARBERS = [
-  { id: 'gui', name: 'Gui', specialty: 'Cortes e degradê' },
-  { id: 'leo', name: 'Léo', specialty: 'Barba e acabamento' },
-  { id: 'rafa', name: 'Rafa', specialty: 'Sobrancelha e design' },
-];
-
 export const BARBERSHOP_INFO = {
   name: 'Gui Cortes',
   tagline: 'Seu estilo, nossa arte.',
