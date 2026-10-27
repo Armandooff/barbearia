@@ -55,6 +55,7 @@ let state = {
   slotTemplate: defaultTemplate,
   availableSlots: null,
   appointments: [],
+  reviews: [],
 };
 
 state.availableSlots = rebuildSlots(state.availableDates, state.slotTemplate);
@@ -131,6 +132,32 @@ app.post('/api/appointments', (req, res) => {
   state.availableSlots[date] = state.availableSlots[date].filter((t) => t !== time);
   persist();
   res.status(201).json(appointment);
+});
+
+// Reviews
+app.get('/api/reviews', (req, res) => res.json(state.reviews));
+
+app.post('/api/reviews', (req, res) => {
+  const { name, rating, comment } = req.body || {};
+  if (!name || !rating) return res.status(400).json({ error: 'Dados incompletos' });
+  const review = {
+    id: (crypto.randomUUID && crypto.randomUUID()) || String(Date.now()),
+    name,
+    rating: Math.min(5, Math.max(1, Number(rating))),
+    comment: comment || '',
+    createdAt: new Date().toISOString(),
+  };
+  state.reviews.unshift(review);
+  persist();
+  res.status(201).json(review);
+});
+
+app.delete('/api/reviews/:id', authMiddleware, (req, res) => {
+  const before = state.reviews.length;
+  state.reviews = state.reviews.filter((r) => r.id !== req.params.id);
+  if (state.reviews.length === before) return res.status(404).json({ error: 'Não encontrado' });
+  persist();
+  res.json({ ok: true });
 });
 
 // Auth

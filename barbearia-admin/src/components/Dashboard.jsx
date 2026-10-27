@@ -7,6 +7,7 @@ const TABS = [
   { id: 'services', label: 'Serviços' },
   { id: 'barbers', label: 'Barbeiros' },
   { id: 'availability', label: 'Disponibilidade' },
+  { id: 'reviews', label: 'Avaliações' },
 ];
 
 export default function Dashboard({ onLogout }) {
@@ -14,6 +15,7 @@ export default function Dashboard({ onLogout }) {
   const [appointments, setAppointments] = useState([]);
   const [services, setServices] = useState([]);
   const [barbers, setBarbers] = useState([]);
+  const [reviews, setReviews] = useState([]);
   const [availableDates, setAvailableDates] = useState([]);
   const [slotTemplate, setSlotTemplate] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,16 +33,18 @@ export default function Dashboard({ onLogout }) {
     setLoading(true);
     setMessage('');
     try {
-      const [appts, svcs, brb, avail] = await Promise.all([
+      const [appts, svcs, brb, avail, revs] = await Promise.all([
         api.getAppointments(),
         api.getServices(),
         api.getBarbers(),
         api.getAvailability(),
+        api.getReviews(),
       ]);
       setAppointments(appts);
       setServices(svcs);
       setBarbers(brb);
       setAvailableDates(avail.dates);
+      setReviews(revs);
       setSlotTemplate(avail.template);
     } catch (e) {
       setMessage(e.message);
@@ -57,6 +61,18 @@ export default function Dashboard({ onLogout }) {
       setAppointments((prev) => prev.filter((a) => a.id !== id));
       setMessage('Agendamento cancelado.');
       setToast({ type: 'success', text: 'Agendamento cancelado.' });
+
+  const handleDeleteReview = async (id) => {
+    try {
+      await api.deleteReview(id);
+      setReviews((prev) => prev.filter((r) => r.id !== id));
+      setMessage('Avaliação removida.');
+      setToast({ type: 'success', text: 'Avaliação removida.' });
+    } catch (e) {
+      setMessage(e.message);
+      setToast({ type: 'error', text: e.message || 'Erro ao remover avaliação.' });
+    }
+  };
     } catch (e) {
       setMessage(e.message);
     }
@@ -297,6 +313,28 @@ export default function Dashboard({ onLogout }) {
                 </button>
               </div>
             </div>
+          )}
+
+          {tab === 'reviews' && (
+            reviews.length === 0 ? (
+              <p className="text-zinc-500 text-sm">Nenhuma avaliação registrada.</p>
+            ) : (
+              <div className="space-y-3">
+                {reviews.map((r) => (
+                  <div key={r.id} className="border-2 border-zinc-800 p-4 flex items-start justify-between gap-4">
+                    <div className="space-y-1">
+                      <p className="text-white font-bold font-display">{r.name} <span className="text-zinc-400 text-xs">({r.rating}/5)</span></p>
+                      <p className="text-zinc-300 text-sm">{r.comment || 'Sem comentário.'}</p>
+                      <p className="text-zinc-500 text-xs">{new Date(r.createdAt).toLocaleDateString('pt-BR')}</p>
+                    </div>
+                    <button onClick={() => handleDeleteReview(r.id)}
+                      className="px-3 py-1 border-2 border-red-500 text-red-400 font-bold font-display hover:bg-red-500 hover:text-white transition">
+                      Remover
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )
           )}
 
           {tab === 'availability' && (
