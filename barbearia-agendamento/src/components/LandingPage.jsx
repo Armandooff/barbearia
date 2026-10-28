@@ -136,25 +136,6 @@ export default function LandingPage({ onNameSubmit }) {
         </div>
       </section>
 
-      {/* Depoimentos */}
-      <section className="border-y border-zinc-800 bg-zinc-900/40">
-        <div className="max-w-4xl mx-auto px-6 py-3 space-y-8">
-          <h2 className="font-display text-3xl text-white text-center">O que dizem os clientes</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[
-              { name: 'João', text: 'Corte impecável, atendimento top!' },
-              { name: 'Pedro', text: 'Melhor barbearia da região, recomendo.' },
-              { name: 'Lucas', text: 'Pontual, limpo e profissional.' },
-            ].map((t) => (
-              <div key={t.name} className="border-2 border-zinc-800 bg-black/60 p-5 space-y-2">
-                <p className="text-zinc-300 text-sm italic">"{t.text}"</p>
-                <p className="text-white font-display text-sm">— {t.name}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Planos mensais */}
       <section className="max-w-5xl mx-auto px-6 py-3 space-y-6">
         <div className="text-center space-y-2">
