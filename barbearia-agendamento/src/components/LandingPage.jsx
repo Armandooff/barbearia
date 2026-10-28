@@ -41,7 +41,7 @@ export default function LandingPage({ onNameSubmit }) {
           <Scissors className="w-14 h-14 mx-auto text-white mb-4 drop-shadow-[0_0_12px_rgba(255,255,255,0.4)]" />
         </div>
         <h1 className="font-display text-6xl md:text-9xl animate-fade-in-up -rotate-2" style={{ animationDelay: '0.1s' }}>
-          {BARBERSHOP_INFO.name.toUpperCase().replace(' ', '')}
+          {BARBERSHOP_INFO.name.toUpperCase()}
         </h1>
         <p className="text-zinc-300 uppercase tracking-[0.4em] text-sm font-semibold animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
           {BARBERSHOP_INFO.tagline}
