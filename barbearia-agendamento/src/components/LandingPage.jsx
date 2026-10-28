@@ -162,16 +162,21 @@ export default function LandingPage({ onNameSubmit }) {
           <p className="text-zinc-400 text-sm">Economize com um plano fixo mensal (exemplo ilustrativo).</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {PLANS.map((p) => (
-            <div key={p.id} className="border-2 border-zinc-800 bg-black/60 p-6 space-y-3 hover-lift">
-              <h3 className="font-display text-xl text-white">{p.name}</h3>
-              <p className="text-zinc-400 text-sm">{p.description}</p>
-              <p className="text-2xl font-bold text-white">R$ {p.price},00<span className="text-sm text-zinc-500">/mês</span></p>
+          {PLANS.map((p, idx) => (
+            <div key={p.id} className="relative border-2 border-white bg-white text-black p-6 space-y-3 hover-lift">
+              {idx === 1 && (
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-black text-white text-xs font-bold font-display px-3 py-1 border-2 border-white">
+                  MAIS POPULAR
+                </span>
+              )}
+              <h3 className="font-display text-2xl text-black">{p.name}</h3>
+              <p className="text-zinc-700 text-sm">{p.description}</p>
+              <p className="text-3xl font-black text-black">R$ {p.price},00<span className="text-sm text-zinc-600">/mês</span></p>
               <a
                 href={`https://wa.me/${BARBERSHOP_INFO.whatsapp}?text=${encodeURIComponent('Olá! Tenho interesse no ' + p.name + '.')}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block text-center px-4 py-2 bg-white text-black font-bold font-display border-2 border-white hover:bg-black hover:text-white transition"
+                className="block text-center px-4 py-2 bg-black text-white font-bold font-display border-2 border-black hover:bg-white hover:text-black transition"
               >
                 Quero este plano
               </a>
