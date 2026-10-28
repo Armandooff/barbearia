@@ -14,6 +14,7 @@ export default function Dashboard({ onLogout }) {
   const [services, setServices] = useState([]);
   const [availableDates, setAvailableDates] = useState([]);
   const [slotTemplate, setSlotTemplate] = useState([]);
+  const [blocked, setBlocked] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -39,6 +40,7 @@ export default function Dashboard({ onLogout }) {
       setServices(svcs);
       setAvailableDates(avail.dates);
       setSlotTemplate(avail.template);
+      setBlocked(avail.blocked || {});
       setLastSeenIds(new Set(appts.map((a) => a.id)));
     } catch (e) {
       setMessage(e.message);
@@ -97,7 +99,7 @@ export default function Dashboard({ onLogout }) {
     setSaving(true);
     setMessage('');
     try {
-      const res = await api.putAvailability({ dates: availableDates, template: slotTemplate });
+      const res = await api.putAvailability({ dates: availableDates, template: slotTemplate, blocked });
       setAvailableDates(res.dates);
       setSlotTemplate(res.template);
       setMessage('Disponibilidade salva.');
@@ -134,6 +136,32 @@ export default function Dashboard({ onLogout }) {
     setNewTime('');
   };
   const removeTime = (t) => setSlotTemplate((prev) => prev.filter((x) => x !== t));
+
+  const [blockDate, setBlockDate] = useState('');
+  const [blockTime, setBlockTime] = useState('');
+
+  const blockSlot = () => {
+    if (!blockDate || !blockTime) return;
+    setBlocked((prev) => {
+      const next = { ...prev };
+      if (!next[blockDate]) next[blockDate] = [];
+      if (!next[blockDate].includes(blockTime)) next[blockDate] = [...next[blockDate], blockTime];
+      return next;
+    });
+    setBlockDate('');
+    setBlockTime('');
+  };
+
+  const unblockSlot = (date, time) => {
+    setBlocked((prev) => {
+      const next = { ...prev };
+      if (next[date]) {
+        next[date] = next[date].filter((t) => t !== time);
+        if (next[date].length === 0) delete next[date];
+      }
+      return next;
+    });
+  };
 
   if (loading) {
     return (
@@ -321,6 +349,35 @@ export default function Dashboard({ onLogout }) {
                     </span>
                   ))}
                 </div>
+              </div>
+
+              <div className="space-y-2 border-t border-zinc-800 pt-4">
+                <h3 className="font-display text-lg text-white">Bloquear horário específico</h3>
+                <div className="flex gap-2 flex-wrap">
+                  <input type="date" value={blockDate} onChange={(e) => setBlockDate(e.target.value)}
+                    className="px-3 py-2 border-2 border-zinc-700 bg-black text-white text-sm focus:outline-none focus:border-white transition" />
+                  <select value={blockTime} onChange={(e) => setBlockTime(e.target.value)}
+                    className="px-3 py-2 border-2 border-zinc-700 bg-black text-white text-sm focus:outline-none focus:border-white transition">
+                    <option value="">Horário</option>
+                    {slotTemplate.map((t) => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                  <button onClick={blockSlot}
+                    className="px-4 py-2 bg-white text-black font-bold font-display border-2 border-white hover:bg-black hover:text-white transition">
+                    Bloquear
+                  </button>
+                </div>
+                {Object.keys(blocked).length > 0 && (
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    {Object.entries(blocked).map(([date, times]) =>
+                      times.map((t) => (
+                        <span key={date + t} className="inline-flex items-center gap-1 px-3 py-1 border-2 border-red-500 text-red-400 text-sm">
+                          {new Date(date + 'T00:00:00').toLocaleDateString('pt-BR')} {t}
+                          <button onClick={() => unblockSlot(date, t)} className="text-red-400 hover:text-white font-bold">×</button>
+                        </span>
+                      ))
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end">

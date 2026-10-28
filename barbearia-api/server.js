@@ -46,9 +46,24 @@ let state = {
   services: defaultServices,
   availableDates: defaultDates(),
   slotTemplate: defaultTemplate,
+  blocked: {},
   availableSlots: null,
   appointments: [],
 };
+
+function computeSlots(dates, template, blocked) {
+  const obj = {};
+  dates.forEach((d) => {
+    const blockedTimes = (blocked && blocked[d]) || [];
+    obj[d] = (template || []).filter((t) => !blockedTimes.includes(t));
+  });
+  return obj;
+}
+
+// ensure availableSlots initialized
+if (!state.availableSlots) {
+  state.availableSlots = computeSlots(state.availableDates, state.slotTemplate, state.blocked);
+}
 
 state.availableSlots = rebuildSlots(state.availableDates, state.slotTemplate);
 
@@ -57,7 +72,8 @@ if (fs.existsSync(DATA_FILE)) {
   try {
     const raw = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
     state = { ...state, ...raw };
-    if (!state.availableSlots) state.availableSlots = rebuildSlots(state.availableDates, state.slotTemplate);
+    if (!state.blocked) state.blocked = {};
+    state.availableSlots = computeSlots(state.availableDates, state.slotTemplate, state.blocked);
   } catch (e) {
     console.error('Failed to load data.json', e);
   }
@@ -94,6 +110,7 @@ app.get('/api/availability', (req, res) => {
     dates: state.availableDates,
     slots: state.availableSlots,
     template: state.slotTemplate,
+    blocked: state.blocked,
   });
 });
 
@@ -154,12 +171,17 @@ app.put('/api/services', authMiddleware, (req, res) => {
 });
 
 app.put('/api/availability', authMiddleware, (req, res) => {
-  const { dates, template } = req.body || {};
+  const { dates, template, blocked } = req.body || {};
   if (Array.isArray(dates)) state.availableDates = [...new Set(dates)].sort();
   if (Array.isArray(template)) state.slotTemplate = template;
-  state.availableSlots = rebuildSlots(state.availableDates, state.slotTemplate);
+  if (blocked && typeof blocked === 'object') state.blocked = blocked;
+  // prune blocked for removed dates
+  state.blocked = Object.fromEntries(
+    Object.entries(state.blocked).filter(([d]) => state.availableDates.includes(d))
+  );
+  state.availableSlots = computeSlots(state.availableDates, state.slotTemplate, state.blocked);
   persist();
-  res.json({ dates: state.availableDates, slots: state.availableSlots, template: state.slotTemplate });
+  res.json({ dates: state.availableDates, slots: state.availableSlots, template: state.slotTemplate, blocked: state.blocked });
 });
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
