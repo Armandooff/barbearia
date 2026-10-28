@@ -119,17 +119,17 @@ export default function LandingPage({ onNameSubmit }) {
           <h2 className="font-display text-3xl text-white">Galeria de cortes</h2>
           <p className="text-zinc-400 text-sm">Exemplos de trabalhos realizados (fotos ilustrativas).</p>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {[1,2,3,4,5,6].map((i) => (
-            <div key={i} className="group relative overflow-hidden border-2 border-zinc-800 bg-black">
+            <div key={i} className="group relative overflow-hidden border-2 border-zinc-800 bg-black hover-lift">
               <img
                 src={`/gallery/corte${i}.svg`}
                 alt={`Corte ${i}`}
-                className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+                className="w-full h-52 object-cover transition-transform duration-500 group-hover:scale-110"
                 loading="lazy"
               />
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-end p-3">
-                <span className="text-white text-sm font-display">Corte {i}</span>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-100 transition flex items-end p-4">
+                <span className="text-white font-display text-lg">Corte {i}</span>
               </div>
             </div>
           ))}
@@ -144,20 +144,26 @@ export default function LandingPage({ onNameSubmit }) {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {PLANS.map((p, idx) => (
-            <div key={p.id} className="relative border-2 border-white bg-white text-black p-6 space-y-3 hover-lift">
+            <div key={p.id} className="relative border-2 border-white bg-white text-black p-6 space-y-4 hover-lift shadow-[0_8px_24px_-8px_rgba(255,255,255,0.25)]">
               {idx === 1 && (
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-black text-white text-xs font-bold font-display px-3 py-1 border-2 border-white">
                   MAIS POPULAR
                 </span>
               )}
-              <h3 className="font-display text-2xl text-black">{p.name}</h3>
+              <div className="flex items-center gap-2">
+                <Scissors className="w-5 h-5 text-black" />
+                <h3 className="font-display text-2xl text-black">{p.name}</h3>
+              </div>
               <p className="text-zinc-700 text-sm">{p.description}</p>
-              <p className="text-3xl font-black text-black">R$ {p.price},00<span className="text-sm text-zinc-600">/mês</span></p>
+              <div className="flex items-baseline gap-1">
+                <span className="text-4xl font-black text-black">R$ {p.price}</span>
+                <span className="text-sm text-zinc-600">,00/mês</span>
+              </div>
               <a
                 href={`https://wa.me/${BARBERSHOP_INFO.whatsapp}?text=${encodeURIComponent('Olá! Tenho interesse no ' + p.name + '.')}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block text-center px-4 py-2 bg-black text-white font-bold font-display border-2 border-black hover:bg-white hover:text-black transition"
+                className="block text-center px-4 py-3 bg-black text-white font-bold font-display border-2 border-black hover:bg-white hover:text-black transition"
               >
                 Quero este plano
               </a>
