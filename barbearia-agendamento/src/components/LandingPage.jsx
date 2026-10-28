@@ -66,7 +66,7 @@ export default function LandingPage({ onNameSubmit }) {
       {/* Quote */}
       <div className="border-y border-zinc-800 bg-black/60 relative overflow-hidden">
         <div className="spray-splatter w-96 h-96 -left-20 top-0 opacity-40" />
-        <div className="max-w-3xl mx-auto px-6 py-10 text-center space-y-4 relative z-10">
+        <div className="max-w-3xl mx-auto px-6 py-6 text-center space-y-4 relative z-10">
           <p className="font-display text-3xl md:text-5xl text-white animate-fade-in-up rotate-1">
             "{BARBERSHOP_INFO.quote}"
           </p>
@@ -77,7 +77,7 @@ export default function LandingPage({ onNameSubmit }) {
       </div>
 
       {/* Agendamento */}
-      <div id="agendamento" className="max-w-3xl mx-auto px-6 py-10 space-y-6 relative">
+      <div id="agendamento" className="max-w-3xl mx-auto px-6 py-6 space-y-6 relative">
         <div className="spray-splatter w-72 h-72 -right-10 -top-10" />
         <div className="text-center space-y-2 relative z-10">
           <h2 className="font-display text-4xl">Agendamento Online</h2>
@@ -114,7 +114,7 @@ export default function LandingPage({ onNameSubmit }) {
       </div>
 
       {/* Galeria de cortes */}
-      <section className="max-w-5xl mx-auto px-6 py-10 space-y-6">
+      <section className="max-w-5xl mx-auto px-6 py-6 space-y-6">
         <div className="text-center space-y-2">
           <h2 className="font-display text-3xl text-white">Galeria de cortes</h2>
           <p className="text-zinc-400 text-sm">Exemplos de trabalhos realizados (fotos ilustrativas).</p>
@@ -138,7 +138,7 @@ export default function LandingPage({ onNameSubmit }) {
 
       {/* Depoimentos */}
       <section className="border-y border-zinc-800 bg-zinc-900/40">
-        <div className="max-w-4xl mx-auto px-6 py-10 space-y-8">
+        <div className="max-w-4xl mx-auto px-6 py-6 space-y-8">
           <h2 className="font-display text-3xl text-white text-center">O que dizem os clientes</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
@@ -156,7 +156,7 @@ export default function LandingPage({ onNameSubmit }) {
       </section>
 
       {/* Planos mensais */}
-      <section className="max-w-5xl mx-auto px-6 py-10 space-y-6">
+      <section className="max-w-5xl mx-auto px-6 py-6 space-y-6">
         <div className="text-center space-y-2">
           <h2 className="font-display text-3xl text-white">Planos mensais</h2>
           <p className="text-zinc-400 text-sm">Economize com um plano fixo mensal (exemplo ilustrativo).</p>
