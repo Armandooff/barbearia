@@ -24,6 +24,12 @@ export const AVAILABLE_SLOTS = AVAILABLE_DATES.reduce((acc, date) => {
   return acc;
 }, {});
 
+export const PLANS = [
+  { id: 'corte', name: 'Plano Corte', description: '4 cortes de cabelo por mês', price: 120 },
+  { id: 'barba', name: 'Plano Barba', description: '4 barbas por mês', price: 80 },
+  { id: 'completo', name: 'Plano Completo', description: '4 cortes + barba por mês', price: 180 },
+];
+
 export const BARBERSHOP_INFO = {
   name: 'Gui Cortes',
   tagline: 'Seu estilo, nossa arte.',
