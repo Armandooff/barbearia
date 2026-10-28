@@ -146,24 +146,24 @@ export default function LandingPage({ onNameSubmit }) {
           {PLANS.map((p, idx) => (
             <div key={p.id} className="relative border-2 border-zinc-700 bg-zinc-900/60 p-6 space-y-4 hover-lift">
               {idx === 1 && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-zinc-900 text-xs font-bold font-display px-3 py-1">
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white text-black text-xs font-bold font-display px-3 py-1 border-2 border-white">
                   MAIS POPULAR
                 </span>
               )}
               <div className="flex items-center gap-2">
-                <Scissors className="w-5 h-5 text-amber-400" />
+                <Scissors className="w-5 h-5 text-white" />
                 <h3 className="font-display text-2xl text-white">{p.name}</h3>
               </div>
               <p className="text-zinc-400 text-sm">{p.description}</p>
               <div className="flex items-baseline gap-1">
-                <span className="text-4xl font-black text-amber-400">R$ {p.price}</span>
+                <span className="text-4xl font-black text-white">R$ {p.price}</span>
                 <span className="text-sm text-zinc-500">,00/mês</span>
               </div>
               <a
                 href={`https://wa.me/${BARBERSHOP_INFO.whatsapp}?text=${encodeURIComponent('Olá! Tenho interesse no ' + p.name + '.')}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block text-center px-4 py-3 bg-amber-500 text-zinc-900 font-bold font-display hover:bg-amber-400 transition"
+                className="block text-center px-4 py-3 bg-white text-black font-bold font-display border-2 border-white hover:bg-black hover:text-white transition"
               >
                 Quero este plano
               </a>
