@@ -33,4 +33,5 @@ export const api = {
   putAvailability: (payload) => request('/api/availability', { method: 'PUT', body: JSON.stringify(payload) }),
   getAppointments: () => request('/api/appointments'),
   deleteAppointment: (id) => request('/api/appointments/' + id, { method: 'DELETE' }),
+  markPaymentReceived: (id) => request('/api/appointments/' + id + '/payment', { method: 'PATCH' }),
 };

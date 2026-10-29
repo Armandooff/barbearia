@@ -8,6 +8,12 @@ const TABS = [
   { id: 'availability', label: 'Disponibilidade' },
 ];
 
+const paymentLabel = (status) => ({
+  paid: 'Recebido', pending: 'Aguardando pagamento', failed: 'Falhou', expired: 'Expirado',
+  cancelled: 'Cancelado', refunded: 'Reembolsado', charged_back: 'Contestado',
+}[status] || 'Aguardando pagamento');
+const appointmentLabel = (status) => ({ pending_payment: 'Aguardando PIX', confirmed: 'Confirmado', cancelled: 'Cancelado', expired: 'Expirado' }[status] || 'Confirmado');
+const paymentTone = (status) => status === 'paid' ? 'text-[#12cdb2] border-[#12cdb2]' : status === 'pending' ? 'text-[#f3d64e] border-[#f3d64e]' : 'text-zinc-400 border-zinc-700';
 export default function Dashboard({ onLogout }) {
   const [tab, setTab] = useState('appointments');
   const [appointments, setAppointments] = useState([]);
@@ -70,12 +76,23 @@ export default function Dashboard({ onLogout }) {
   const handleCancel = async (id) => {
     try {
       await api.deleteAppointment(id);
-      setAppointments((prev) => prev.filter((a) => a.id !== id));
+      setAppointments((prev) => prev.map((a) => a.id === id ? { ...a, status: 'cancelled', paymentStatus: 'cancelled' } : a));
       setMessage('Agendamento cancelado.');
       setToast({ type: 'success', text: 'Agendamento cancelado.' });
     } catch (e) {
       setMessage(e.message);
       setToast({ type: 'error', text: e.message || 'Erro ao cancelar.' });
+    }
+  };
+
+  const handleMarkPaymentReceived = async (id) => {
+    try {
+      const updated = await api.markPaymentReceived(id);
+      setAppointments((prev) => prev.map((appointment) => appointment.id === id ? updated : appointment));
+      setToast({ type: 'success', text: 'Pagamento marcado como recebido.' });
+    } catch (e) {
+      setMessage(e.message);
+      setToast({ type: 'error', text: e.message || 'Erro ao atualizar pagamento.' });
     }
   };
 
@@ -192,18 +209,23 @@ export default function Dashboard({ onLogout }) {
         {(() => {
           const todayStr = new Date().toISOString().split('T')[0];
           const todayAppts = appointments
-            .filter((a) => a.date === todayStr)
+            .filter((a) => a.date === todayStr && !['cancelled', 'expired'].includes(a.status))
             .sort((a, b) => a.time.localeCompare(b.time));
-          const revenue = todayAppts.reduce((sum, a) => sum + (Number(a.service?.price) || 0), 0);
+          const revenue = todayAppts.filter((a) => a.paymentStatus === 'paid').reduce((sum, a) => sum + (Number(a.service?.price) || 0), 0);
+          const pendingPayments = appointments.filter((a) => a.paymentStatus === 'pending' && !['cancelled', 'expired'].includes(a.status)).length;
           const next = todayAppts[0];
           return (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               <div className="border-2 border-zinc-800 bg-black/60 p-4">
                 <p className="text-xs font-display uppercase text-zinc-400">Agendamentos hoje</p>
                 <p className="text-2xl font-bold text-white mt-1">{todayAppts.length}</p>
               </div>
               <div className="border-2 border-zinc-800 bg-black/60 p-4">
-                <p className="text-xs font-display uppercase text-zinc-400">Receita prevista</p>
+                <p className="text-xs font-display uppercase text-zinc-400">Aguardando pagamento</p>
+                <p className="text-2xl font-bold text-[#f3d64e] mt-1">{pendingPayments}</p>
+              </div>
+              <div className="border-2 border-zinc-800 bg-black/60 p-4">
+                <p className="text-xs font-display uppercase text-zinc-400">Recebido hoje</p>
                 <p className="text-2xl font-bold text-white mt-1">R$ {revenue.toFixed(2).replace('.', ',')}</p>
               </div>
               <div className="border-2 border-zinc-800 bg-black/60 p-4">
@@ -233,38 +255,42 @@ export default function Dashboard({ onLogout }) {
             appointments.length === 0 ? (
               <p className="text-zinc-500 text-sm">Nenhum agendamento registrado.</p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-zinc-500 border-b border-zinc-800">
-                      <th className="py-2 pr-4 font-display">Cliente</th>
-                      <th className="py-2 pr-4 font-display">Serviço</th>
-                      <th className="py-2 pr-4 font-display">Data</th>
-                      <th className="py-2 pr-4 font-display">Horário</th>
-                      <th className="py-2 pr-4 font-display">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {appointments.map((a) => (
-                      <tr key={a.id} className="border-b border-zinc-800">
-                        <td className="py-2 pr-4 text-white">{a.clientName}</td>
-                        <td className="py-2 pr-4 text-zinc-300">{a.service?.name}</td>
-                        <td className="py-2 pr-4 text-zinc-300">{new Date(a.date + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
-                        <td className="py-2 pr-4 text-zinc-300">{a.time}</td>
-                        <td className="py-2 pr-4">
-                          <button onClick={() => handleCancel(a.id)}
-                            className="px-3 py-1 border-2 border-red-500 text-red-400 font-bold font-display hover:bg-red-500 hover:text-white transition">
-                            Cancelar
-                          </button>
-                        </td>
+              <>
+                <div className="space-y-3 md:hidden">
+                  {appointments.map((appointment) => (
+                    <article key={appointment.id} className="border-2 border-zinc-800 bg-black/50 p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div><h3 className="font-bold text-white">{appointment.clientName}</h3><p className="text-sm text-zinc-400">{appointment.service?.name}</p></div>
+                        <span className="text-xs text-[#f3d64e]">R$ {Number(appointment.service?.price || 0).toFixed(2).replace('.', ',')}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2 text-xs">
+                        <span className="px-2 py-1 border border-zinc-700 text-zinc-300">{new Date(appointment.date + 'T00:00:00').toLocaleDateString('pt-BR')} · {appointment.time}</span>
+                        <span className="px-2 py-1 border border-zinc-700 text-zinc-300">{appointment.paymentMethod === 'pix' ? 'PIX' : 'Presencial'}</span>
+                        <span className={`px-2 py-1 border ${paymentTone(appointment.paymentStatus)}`}>{paymentLabel(appointment.paymentStatus)}</span>
+                        <span className="px-2 py-1 border border-zinc-700 text-zinc-400">{appointmentLabel(appointment.status)}</span>
+                      </div>
+                      {appointment.paymentMethod === 'onsite' && appointment.paymentStatus === 'pending' && appointment.status === 'confirmed' && <button onClick={() => handleMarkPaymentReceived(appointment.id)} className="w-full px-3 py-2 border-2 border-[#12cdb2] text-[#12cdb2] font-bold">Marcar como recebido</button>}
+                      {appointment.paymentStatus !== 'paid' && !(appointment.paymentMethod === 'pix' && appointment.status === 'pending_payment') && !['cancelled', 'expired'].includes(appointment.status) && <button onClick={() => handleCancel(appointment.id)} className="w-full px-3 py-2 border-2 border-red-500 text-red-400 font-bold">Cancelar agendamento</button>}
+                    </article>
+                  ))}
+                </div>
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead><tr className="text-left text-zinc-500 border-b border-zinc-800">
+                      <th className="py-2 pr-4 font-display">Cliente</th><th className="py-2 pr-4 font-display">Servico</th><th className="py-2 pr-4 font-display">Data</th><th className="py-2 pr-4 font-display">Horario</th><th className="py-2 pr-4 font-display">Pagamento</th><th className="py-2 pr-4 font-display">Status</th><th className="py-2 pr-4 font-display">Acoes</th>
+                    </tr></thead>
+                    <tbody>{appointments.map((appointment) => (
+                      <tr key={appointment.id} className="border-b border-zinc-800">
+                        <td className="py-3 pr-4 text-white">{appointment.clientName}</td><td className="py-3 pr-4 text-zinc-300">{appointment.service?.name}</td><td className="py-3 pr-4 text-zinc-300">{new Date(appointment.date + 'T00:00:00').toLocaleDateString('pt-BR')}</td><td className="py-3 pr-4 text-zinc-300">{appointment.time}</td>
+                        <td className="py-3 pr-4"><span className="text-zinc-300">{appointment.paymentMethod === 'pix' ? 'PIX' : 'Presencial'}</span><span className={`block text-xs ${paymentTone(appointment.paymentStatus).split(' ')[0]}`}>{paymentLabel(appointment.paymentStatus)}</span></td><td className="py-3 pr-4 text-zinc-300">{appointmentLabel(appointment.status)}</td>
+                        <td className="py-3 pr-4 whitespace-nowrap">{appointment.paymentMethod === 'onsite' && appointment.paymentStatus === 'pending' && appointment.status === 'confirmed' && <button onClick={() => handleMarkPaymentReceived(appointment.id)} className="mr-2 px-2 py-1 border border-[#12cdb2] text-[#12cdb2] font-bold">Recebido</button>}{appointment.paymentStatus !== 'paid' && !(appointment.paymentMethod === 'pix' && appointment.status === 'pending_payment') && !['cancelled', 'expired'].includes(appointment.status) && <button onClick={() => handleCancel(appointment.id)} className="px-2 py-1 border border-red-500 text-red-400 font-bold">Cancelar</button>}</td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    ))}</tbody>
+                  </table>
+                </div>
+              </>
             )
           )}
-
           {tab === 'services' && (
             <div className="space-y-4">
               <div className="flex justify-end">

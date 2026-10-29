@@ -18,4 +18,5 @@ export const api = {
   getAvailability: () => request('/api/availability'),
   createAppointment: (payload) =>
     request('/api/appointments', { method: 'POST', body: JSON.stringify(payload) }),
+  getPaymentStatus: (id) => request(`/api/appointments/${encodeURIComponent(id)}/payment-status`),
 };

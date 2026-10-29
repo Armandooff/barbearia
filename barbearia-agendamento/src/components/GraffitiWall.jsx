@@ -8,9 +8,9 @@ export default function GraffitiWall() {
     >
       <defs>
         <pattern id="bricks" width="80" height="40" patternUnits="userSpaceOnUse">
-          <rect width="80" height="40" fill="#050505" />
-          <rect x="0" y="0" width="78" height="38" fill="#0a0a0a" stroke="#1a1a1a" strokeWidth="1" />
-          <rect x="40" y="20" width="78" height="38" fill="#080808" stroke="#1a1a1a" strokeWidth="1" />
+          <rect width="80" height="40" fill="#151310" />
+          <rect x="0" y="0" width="78" height="38" fill="#191613" stroke="#27221d" strokeWidth="1" />
+          <rect x="40" y="20" width="78" height="38" fill="#141210" stroke="#27221d" strokeWidth="1" />
         </pattern>
         <filter id="spray">
           <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" />
@@ -28,12 +28,12 @@ export default function GraffitiWall() {
       <rect width="1200" height="800" filter="url(#spray)" opacity="0.5" />
 
       {/* Big graffiti tag */}
-      <g opacity="0.22" fill="#fff" fontFamily="Impact, sans-serif">
+      <g opacity="0.32" fill="#ed3658" fontFamily="Impact, sans-serif">
         <text x="60" y="180" fontSize="150" transform="rotate(-6 60 180)" letterSpacing="4">GUICORTES</text>
       </g>
 
       {/* Secondary tags */}
-      <g opacity="0.2" fill="#fff" fontFamily="Impact, sans-serif">
+      <g opacity="0.28" fill="#12cdb2" fontFamily="Impact, sans-serif">
         <text x="80" y="320" fontSize="64" transform="rotate(8 80 320)">FADE</text>
         <text x="900" y="260" fontSize="72" transform="rotate(-10 900 260)">BARBA</text>
         <text x="120" y="620" fontSize="52" transform="rotate(5 120 620)">STREET</text>
@@ -44,7 +44,7 @@ export default function GraffitiWall() {
       </g>
 
       {/* Stencil character: figure with spray can and scissors */}
-      <g transform="translate(880,300)" opacity="0.16" fill="#fff">
+      <g transform="translate(880,300)" opacity="0.16" fill="#f3d64e">
         {/* cap */}
         <path d="M20 0 L90 0 L100 25 L10 25 Z" />
         <rect x="10" y="25" width="90" height="6" />
@@ -78,7 +78,7 @@ export default function GraffitiWall() {
       </g>
 
       {/* Spray splatters */}
-      <g fill="#fff" opacity="0.18">
+      <g fill="#f3d64e" opacity="0.28">
         <circle cx="200" cy="280" r="30" />
         <circle cx="235" cy="295" r="14" />
         <circle cx="175" cy="310" r="9" />
@@ -92,7 +92,7 @@ export default function GraffitiWall() {
       </g>
 
       {/* Drips */}
-      <g fill="#fff" opacity="0.25" filter="url(#drip)">
+      <g fill="#ed3658" opacity="0.42" filter="url(#drip)">
         <rect x="150" y="0" width="3" height="100" />
         <rect x="170" y="0" width="2" height="60" />
         <rect x="420" y="0" width="4" height="140" />
@@ -104,7 +104,7 @@ export default function GraffitiWall() {
       </g>
 
       {/* Horizontal streaks */}
-      <g stroke="#fff" strokeWidth="1" opacity="0.08">
+      <g stroke="#12cdb2" strokeWidth="1" opacity="0.14">
         <line x1="0" y1="250" x2="1200" y2="250" />
         <line x1="0" y1="500" x2="1200" y2="500" />
         <line x1="0" y1="700" x2="1200" y2="700" />

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import LandingPage from './components/LandingPage';
 import IdentificationForm from './components/IdentificationForm';
 import CalendarSlots from './components/CalendarSlots';
@@ -72,25 +72,31 @@ export default function App() {
     setStep(STEPS.CALENDAR);
   };
 
-  const handleSchedule = async ({ date, time }) => {
+  const handleSchedule = async ({ date, time, paymentMethod }) => {
     if (!client) return;
-    try {
-      await api.createAppointment({
-        clientName: client.name,
-        serviceId: client.service.id,
-        date,
-        time,
-      });
+    const appointment = await api.createAppointment({
+      clientName: client.name,
+      serviceId: client.service.id,
+      date,
+      time,
+      paymentMethod,
+    });
+    if (appointment.paymentMethod === 'onsite') {
       setBooking({ date, time });
       setStep(STEPS.SUCCESS);
-      // refresh availability
+    }
+    try {
       const avail = await api.getAvailability();
       setAvailableDates(avail.dates);
       setAvailableSlots(avail.slots);
-    } catch (e) {
-      alert(e.message || 'Falha ao agendar');
-    }
+    } catch { /* The booking is already created; keep the successful response. */ }
+    return appointment;
   };
+
+  const handlePaymentComplete = useCallback((appointment) => {
+    setBooking({ date: appointment.date, time: appointment.time });
+    setStep(STEPS.SUCCESS);
+  }, []);
 
   const handleReset = () => {
     setClient(null);
@@ -144,6 +150,7 @@ export default function App() {
           availableSlots={availableSlots}
           client={client}
           onSchedule={handleSchedule}
+          onPaymentComplete={handlePaymentComplete}
           onBack={() => setStep(STEPS.IDENTIFY)}
         />
       )}
@@ -152,9 +159,9 @@ export default function App() {
         <section className="min-h-screen graffiti-wall flex items-center justify-center px-6 py-12 text-white relative overflow-hidden">
           <GraffitiWall />
           <BarberIllustration className="absolute bottom-0 right-0 w-36 h-52 opacity-15 hidden lg:block" />
-          <div className="max-w-md w-full border-2 border-zinc-700 bg-black/80 p-8 space-y-4 text-center relative z-10">
-            <CheckCircle2 className="w-12 h-12 mx-auto text-white" />
-            <h2 className="font-display text-3xl text-white">
+          <div className="street-card max-w-md w-full border-2 p-6 sm:p-8 space-y-4 text-center relative z-10">
+            <CheckCircle2 className="w-12 h-12 mx-auto text-[#12cdb2]" />
+            <h2 className="font-display text-3xl sm:text-4xl text-white uppercase">
               Agendamento confirmado
             </h2>
             <div className="text-zinc-300 space-y-1 text-sm">
@@ -164,7 +171,7 @@ export default function App() {
               <p><span className="text-white font-bold">Horário:</span> {booking.time}</p>
             </div>
             <button onClick={handleReset}
-              className="mt-4 w-full px-4 py-3 bg-white text-black font-bold font-display border-2 border-white hover:bg-black hover:text-white transition">
+              className="street-button mt-4 w-full px-4 py-3 font-bold font-display uppercase border-2 transition">
               Novo agendamento
             </button>
           </div>
