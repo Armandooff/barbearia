@@ -45,7 +45,7 @@ export default function Login({ onSuccess }) {
             {loading ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
-        <p className="text-xs text-zinc-500 text-center">Senha padrão: barber123</p>
+        <p className="text-xs text-zinc-500 text-center">Use a senha configurada no servidor.</p>
       </div>
     </section>
   );
