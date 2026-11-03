@@ -1,211 +1,76 @@
 import { useState } from 'react';
 import { BARBERSHOP_INFO, PLANS } from '../data/mocks';
-import { Scissors, MapPin, Phone, Camera, Calendar, ArrowDown, User } from 'lucide-react';
-import GraffitiWall from './GraffitiWall';
-import BarberIllustration from './BarberIllustration';
+import { ArrowUpRight, Calendar, Camera, MapPin, Phone, Scissors, User } from 'lucide-react';
 
 export default function LandingPage({ onNameSubmit }) {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
 
-  const scrollToBooking = () => {
-    const el = document.getElementById('agendamento');
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = (event) => {
+    event.preventDefault();
     const trimmed = name.trim();
-    if (!trimmed) { setError('Informe seu nome.'); return; }
-    if (trimmed.length < 3) { setError('Nome deve ter ao menos 3 caracteres.'); return; }
+    if (!trimmed) return setError('Informe seu nome.');
+    if (trimmed.length < 3) return setError('Nome deve ter ao menos 3 caracteres.');
     setError('');
     onNameSubmit(trimmed);
   };
 
   return (
-    <section className="min-h-screen graffiti-wall text-white overflow-hidden relative">
-      <GraffitiWall />
-      <BarberIllustration className="absolute bottom-0 right-0 w-48 h-64 opacity-30 hidden md:block" />
-      {/* Spray splatters */}
-      <div className="spray-splatter w-64 h-64 -top-10 -left-10 animate-spray" />
-      <div className="spray-splatter w-80 h-80 top-1/3 -right-20 animate-spray" style={{ animationDelay: '2s' }} />
-      <div className="spray-splatter w-48 h-48 bottom-20 left-1/4 animate-spray" style={{ animationDelay: '3.5s' }} />
-
-      {/* Drips */}
-      <div className="drip left-12 top-0" style={{ animationDelay: '0.5s' }} />
-      <div className="drip right-24 top-0" style={{ animationDelay: '1.2s', height: '40px' }} />
-      <div className="drip left-1/2 top-0" style={{ animationDelay: '2.1s', height: '80px' }} />
-
-      <div className="relative z-10 min-h-[auto] md:min-h-[680px] max-w-7xl mx-auto px-5 sm:px-6 py-10 md:py-24 grid md:grid-cols-[1fr_1.02fr] gap-8 md:gap-12 items-center">
-        <div className="text-left space-y-4 md:space-y-6 md:pl-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 border border-[#f3d64e]/50 bg-black/40 text-[#f3d64e] uppercase tracking-[.22em] text-xs font-bold animate-fade-in-up"><Scissors className="w-4 h-4" /> Barbearia de atitude</div>
-          <h1 className="graffiti-text street-title text-[3.6rem] sm:text-8xl md:text-[8.5rem] leading-[.82] animate-fade-in-up -rotate-2 origin-left" style={{ animationDelay: '0.1s' }}>{BARBERSHOP_INFO.name.toUpperCase().replace(' ', '')}</h1>
-          <p className="text-[#f3d64e] uppercase tracking-[0.3em] text-xs sm:text-sm font-bold animate-fade-in-up" style={{ animationDelay: '0.2s' }}>{BARBERSHOP_INFO.tagline}</p>
-          <p className="text-zinc-300 text-lg max-w-lg animate-fade-in-up" style={{ animationDelay: '0.3s' }}>{BARBERSHOP_INFO.welcome}</p>
-          <div className="pt-2 animate-fade-in-up" style={{ animationDelay: '0.4s' }}><button onClick={scrollToBooking} className="street-button inline-flex items-center gap-2 px-8 py-4 font-bold font-display uppercase tracking-wide border-2 transition-all hover:-translate-y-1"><Calendar className="w-5 h-5" /> Agendar Horário</button></div>
-          <div className="flex items-center gap-3 pt-4 text-zinc-500 text-xs uppercase tracking-[.2em] font-bold animate-fade-in-up" style={{ animationDelay: '0.5s' }}><span className="w-10 h-px bg-[#ed3658]" /> Corte limpo. Rua viva.</div>
+    <main className="site-shell min-h-screen">
+      <header className="site-header sticky top-0 z-30">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
+          <a href="#top" className="flex items-center gap-3 text-white no-underline">
+            <span className="flex h-9 w-9 items-center justify-center bg-[#c9684d] font-display text-xl font-bold">B</span>
+            <span className="font-display text-xl font-bold uppercase tracking-wide">{BARBERSHOP_INFO.name}</span>
+          </a>
+          <nav className="hidden items-center gap-8 text-xs font-bold uppercase tracking-[.18em] text-[#c9c4b8] sm:flex">
+            <a href="#servicos" className="transition hover:text-white">Serviços</a>
+            <a href="#galeria" className="transition hover:text-white">Galeria</a>
+            <a href="#agendamento" className="text-[#a7c1a0] transition hover:text-white">Agendar</a>
+          </nav>
+          <span className="hidden text-xs uppercase tracking-[.18em] text-[#777b72] md:block">Desde 2018 / Zona norte</span>
         </div>
-        <div className="relative min-h-[210px] sm:min-h-[280px] md:min-h-[470px] mx-1 md:mx-0 animate-fade-in-up" style={{ animationDelay: '0.25s' }}>
-          <div className="absolute -inset-3 border-2 border-[#12cdb2] rotate-2" />
-          <div role="img" aria-label="Mural de grafite colorido em uma rua urbana" className="spray-photo absolute inset-0 border-2 border-white/20 -rotate-2" />
-          <div className="absolute bottom-5 left-5 bg-[#ed3658] px-4 py-2 text-white font-display font-bold text-xl uppercase -rotate-3 shadow-lg">Feito na quebrada</div>
-          <div className="absolute -top-5 right-2 sm:right-8 text-[#f3d64e] graffiti-text text-3xl sm:text-4xl rotate-6">Na régua!</div>
-          <ArrowDown className="absolute -bottom-12 right-3 w-6 h-6 text-[#12cdb2] animate-bounce md:hidden" />
-        </div>
-      </div>
-      {/* Quote */}
-      <div className="border-y border-zinc-800 bg-black/60 relative overflow-hidden">
-        <div className="spray-splatter w-96 h-96 -left-20 top-0 opacity-40" />
-        <div className="max-w-3xl mx-auto px-6 py-3 text-center space-y-4 relative z-10">
-          <p className="font-display text-3xl md:text-5xl text-[#f3d64e] animate-fade-in-up rotate-1">
-            "{BARBERSHOP_INFO.quote}"
-          </p>
-          <p className="text-zinc-400 uppercase tracking-widest text-sm font-semibold animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-            — {BARBERSHOP_INFO.author}
-          </p>
-        </div>
-      </div>
+      </header>
 
-      {/* Agendamento */}
-      <div id="agendamento" className="max-w-3xl mx-auto px-5 sm:px-6 py-12 md:py-16 space-y-6 relative scroll-mt-4">
-        <div className="spray-splatter w-72 h-72 -right-10 -top-10" />
-        <div className="text-center space-y-2 relative z-10">
-          <p className="text-[#12cdb2] uppercase tracking-[.28em] text-xs font-bold">Seu proximo corte comeca aqui</p>
-          <h2 className="font-display text-5xl md:text-6xl uppercase">Agendamento Online</h2>
-          <h3 className="hidden sm:block text-xl font-semibold text-zinc-200">
-            DESEJA MARCAR UM HORÁRIO COM {BARBERSHOP_INFO.name.toUpperCase()}?
-          </h3>
-          <p className="text-zinc-400 text-sm sm:text-base">
-            Escreva seu nome abaixo e clique em confirmar para escolher o serviço e horário.
-          </p>
+      <section id="top" className="mx-auto grid max-w-7xl items-center gap-12 px-5 pb-20 pt-14 sm:px-8 md:grid-cols-[.92fr_1.08fr] md:pb-28 md:pt-24">
+        <div className="relative z-10">
+          <p className="eyebrow mb-6">Barbearia de bairro · corte de respeito</p>
+          <h1 className="display-title max-w-3xl">{BARBERSHOP_INFO.name.split(' ')[0]} <em>{BARBERSHOP_INFO.name.split(' ').slice(1).join(' ')}</em></h1>
+          <p className="mt-8 max-w-md text-base leading-7 text-[#c9c4b8] sm:text-lg">{BARBERSHOP_INFO.welcome}</p>
+          <a href="#agendamento" className="street-button mt-8 px-7 py-4 no-underline"><Calendar className="h-5 w-5" /> Agendar horário</a>
+          <div className="mt-10 flex items-center gap-3 text-xs font-bold uppercase tracking-[.18em] text-[#777b72]"><span className="h-px w-10 bg-[#c9684d]" /> {BARBERSHOP_INFO.tagline}</div>
         </div>
-
-        <form onSubmit={handleSubmit} className="street-card max-w-md mx-auto p-5 sm:p-6 space-y-4 relative z-10 border-2">
-          <div className="space-y-2">
-            <label htmlFor="landing-name" className="flex items-center gap-2 text-sm font-medium text-zinc-300">
-              <User className="w-4 h-4 text-white" /> Nome completo
-            </label>
-            <input
-              id="landing-name"
-              type="text"
-              autoComplete="name"
-              enterKeyHint="go"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: João Silva"
-              className="w-full px-4 py-3 border-2 border-zinc-700 bg-black/80 text-white placeholder-zinc-600 focus:outline-none focus:border-white transition"
-            />
-          </div>
-          {error && <p className="text-red-400 text-sm">{error}</p>}
-          <button
-            type="submit"
-            className="street-button w-full px-8 py-3 font-bold font-display uppercase border-2 transition-all"
-          >
-            Confirmar
-          </button>
-        </form>
-      </div>
-
-      {/* Galeria de cortes */}
-      <section className="max-w-5xl mx-auto px-5 sm:px-6 py-10 md:py-12 space-y-5 md:space-y-6">
-        <div className="text-center space-y-2">
-          <h2 className="font-display text-4xl md:text-5xl uppercase text-white">Galeria de cortes</h2>
-          <p className="text-zinc-400 text-sm">Exemplos de trabalhos realizados (fotos ilustrativas).</p>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-          {[1,2,3,4,5,6].map((i) => (
-            <div key={i} className="group relative overflow-hidden border-2 border-zinc-800 bg-black hover-lift">
-              <img
-                src={`/gallery/corte${i}.svg`}
-                alt={`Corte ${i}`}
-                className="w-full h-36 sm:h-52 object-cover transition-transform duration-500 group-hover:scale-110"
-                loading="lazy"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-100 transition flex items-end p-4">
-                <span className="text-white font-display text-lg">Corte {i}</span>
-              </div>
-            </div>
-          ))}
+        <div className="hero-art relative min-h-[26rem] overflow-hidden border border-white/20 md:min-h-[35rem]">
+          <div className="absolute bottom-7 left-7 max-w-[14rem] paper-note px-4 py-3 font-display text-2xl font-bold uppercase leading-none">Feito na quebrada. Bem feito.</div>
+          <div className="absolute right-7 top-7 border border-[#a7c1a0] px-3 py-2 text-xs font-bold uppercase tracking-[.18em] text-[#a7c1a0]">Na régua</div>
+          <span className="absolute bottom-7 right-7 font-display text-7xl font-bold text-white/15">01</span>
         </div>
       </section>
 
-      {/* Planos mensais */}
-      <section className="max-w-5xl mx-auto px-5 sm:px-6 py-10 md:py-12 space-y-5 md:space-y-6">
-        <div className="text-center space-y-2">
-          <h2 className="font-display text-4xl md:text-5xl uppercase text-white">Planos mensais</h2>
-          <p className="text-zinc-400 text-sm">Economize com um plano fixo mensal (exemplo ilustrativo).</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {PLANS.map((p, idx) => (
-            <div key={p.id} className="street-card relative border-2 p-5 sm:p-6 space-y-4 hover-lift">
-              {idx === 1 && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white text-black text-xs font-bold font-display px-3 py-1 border-2 border-white">
-                  MAIS POPULAR
-                </span>
-              )}
-              <div className="flex items-center gap-2">
-                <Scissors className="w-5 h-5 text-[#12cdb2]" />
-                <h3 className="font-display text-2xl text-white">{p.name}</h3>
-              </div>
-              <p className="text-zinc-400 text-sm">{p.description}</p>
-              <div className="flex items-baseline gap-1">
-                <span className="text-4xl font-black text-[#f3d64e]">R$ {p.price}</span>
-                <span className="text-sm text-zinc-500">,00/mês</span>
-              </div>
-              <a
-                href={`https://wa.me/${BARBERSHOP_INFO.whatsapp}?text=${encodeURIComponent('Olá! Tenho interesse no ' + p.name + '.')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="street-button block text-center px-4 py-3 font-bold font-display uppercase border-2 transition"
-              >
-                Quero este plano
-              </a>
-            </div>
-          ))}
+      <section className="section-rule border-b px-5 py-6 sm:px-8"><p className="mx-auto max-w-7xl text-center font-display text-2xl uppercase tracking-wide text-[#e7c86e] sm:text-3xl">“{BARBERSHOP_INFO.quote}” <span className="text-sm text-[#777b72]">— {BARBERSHOP_INFO.author}</span></p></section>
+
+      <section id="servicos" className="mx-auto max-w-7xl px-5 py-20 sm:px-8 md:py-28">
+        <div className="mb-10 flex items-end justify-between gap-6"><div><p className="eyebrow mb-3">Escolha seu ritual</p><h2 className="font-display text-5xl font-bold uppercase leading-none sm:text-7xl">Serviços</h2></div><p className="hidden max-w-xs text-right text-sm leading-6 text-[#c9c4b8] sm:block">Técnica, conversa boa e acabamento preciso. Sem pressa, sem firula.</p></div>
+        <div className="grid gap-4 md:grid-cols-3">
+          {PLANS.map((plan, index) => <article key={plan.id} className="street-card service-card relative p-6 sm:p-7">
+            {index === 1 && <span className="absolute -top-3 right-5 bg-[#a7c1a0] px-3 py-1 font-display text-sm font-bold uppercase text-[#171816]">Mais pedido</span>}
+            <div className="flex items-start justify-between"><Scissors className="h-6 w-6 text-[#c9684d]" /><span className="font-display text-5xl text-white/10">0{index + 1}</span></div>
+            <h3 className="mt-8 font-display text-3xl font-bold uppercase">{plan.name}</h3>
+            <p className="mt-3 min-h-12 text-sm leading-6 text-[#c9c4b8]">{plan.description}</p>
+            <p className="mt-7 font-display text-4xl font-bold text-[#e7c86e]">R$ {plan.price}<small className="ml-1 text-base font-normal text-[#777b72]">/mês</small></p>
+            <a href={`https://wa.me/${BARBERSHOP_INFO.whatsapp}?text=${encodeURIComponent('Olá! Tenho interesse no ' + plan.name + '.')}`} target="_blank" rel="noopener noreferrer" className="mt-7 inline-flex items-center gap-2 font-display text-lg font-bold uppercase text-[#a7c1a0] no-underline hover:text-white">Quero este plano <ArrowUpRight className="h-5 w-5" /></a>
+          </article>)}
         </div>
       </section>
 
-      {/* Contato */}
-      <footer className="border-t border-zinc-800 bg-black/60 relative overflow-hidden">
-        <div className="spray-splatter w-64 h-64 -right-10 top-0" />
-        <div className="max-w-4xl mx-auto px-5 sm:px-6 py-10 md:py-12 grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 text-sm relative z-10">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-white">
-              <MapPin className="w-4 h-4" />
-              <p className="text-xs font-semibold uppercase tracking-widest">Endereço</p>
-            </div>
-            <p className="text-zinc-200">{BARBERSHOP_INFO.address}</p>
-          </div>
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-white">
-              <Scissors className="w-4 h-4" />
-              <p className="text-xs font-semibold uppercase tracking-widest">{BARBERSHOP_INFO.name.toUpperCase()}</p>
-            </div>
-            <p className="text-zinc-200">{BARBERSHOP_INFO.tagline}</p>
-            <a href={`tel:+${BARBERSHOP_INFO.whatsapp}`} className="flex items-center gap-2 text-zinc-200 hover:text-white transition mt-1">
-              <Phone className="w-4 h-4" />
-              {BARBERSHOP_INFO.phone}
-            </a>
-          </div>
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-white">
-              <Camera className="w-4 h-4" />
-              <p className="text-xs font-semibold uppercase tracking-widest">Instagram</p>
-            </div>
-            <a
-              href={BARBERSHOP_INFO.instagram}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-zinc-200 hover:text-white transition"
-            >
-              Abrir Instagram da barbearia
-            </a>
-          </div>
-        </div>
-        <div className="text-center text-zinc-500 text-xs pb-6 relative z-10">
-          © 2026 {BARBERSHOP_INFO.name}. Todos os direitos reservados.
-        </div>
-      </footer>
-    </section>
+      <section id="agendamento" className="section-rule mx-auto grid max-w-7xl gap-12 px-5 py-20 sm:px-8 md:grid-cols-[1fr_25rem] md:py-28">
+        <div><p className="eyebrow mb-3">Seu próximo corte começa aqui</p><h2 className="max-w-xl font-display text-6xl font-bold uppercase leading-[.86] sm:text-8xl">Cola com a gente.</h2><p className="mt-7 max-w-md text-[#c9c4b8]">Escreva seu nome e escolha o serviço e o melhor horário para você.</p></div>
+        <form onSubmit={handleSubmit} className="street-card p-6 sm:p-8"><label htmlFor="landing-name" className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-[#c9c4b8]"><User className="h-4 w-4 text-[#a7c1a0]" /> Nome completo</label><input id="landing-name" type="text" autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Ex: João Silva" className="field mt-3 px-4 py-3" />{error && <p className="mt-2 text-sm text-[#c9684d]">{error}</p>}<button type="submit" className="street-button mt-5 w-full px-6 py-3">Confirmar agendamento</button></form>
+      </section>
+
+      <section id="galeria" className="mx-auto max-w-7xl px-5 py-20 sm:px-8"><div className="mb-8"><p className="eyebrow mb-3">Trabalho fala</p><h2 className="font-display text-5xl font-bold uppercase sm:text-7xl">Na régua.</h2></div><div className="grid grid-cols-2 gap-3 md:grid-cols-3">{[1, 2, 3, 4, 5, 6].map((item) => <div key={item} className="hover-lift overflow-hidden border border-white/10"><img src={`/gallery/corte${item}.svg`} alt={`Corte ${item}`} loading="lazy" className="aspect-square w-full object-cover" /></div>)}</div></section>
+
+      <footer className="section-rule px-5 py-12 sm:px-8"><div className="mx-auto grid max-w-7xl gap-8 text-sm text-[#c9c4b8] md:grid-cols-3"><div><Scissors className="mb-3 h-5 w-5 text-[#c9684d]" /><p className="font-display text-2xl font-bold uppercase text-white">{BARBERSHOP_INFO.name}</p><p className="mt-2">{BARBERSHOP_INFO.tagline}</p></div><div><MapPin className="mb-3 h-5 w-5 text-[#a7c1a0]" /><p>{BARBERSHOP_INFO.address}</p><a href={`tel:+${BARBERSHOP_INFO.whatsapp}`} className="mt-2 flex items-center gap-2 text-[#c9c4b8] no-underline hover:text-white"><Phone className="h-4 w-4" /> {BARBERSHOP_INFO.phone}</a></div><div><Camera className="mb-3 h-5 w-5 text-[#e7c86e]" /><a href={BARBERSHOP_INFO.instagram} target="_blank" rel="noopener noreferrer" className="text-[#c9c4b8] no-underline hover:text-white">Abrir Instagram da barbearia</a></div></div><p className="mx-auto mt-10 max-w-7xl text-xs text-[#777b72]">© 2026 {BARBERSHOP_INFO.name}. Todos os direitos reservados.</p></footer>
+    </main>
   );
 }
