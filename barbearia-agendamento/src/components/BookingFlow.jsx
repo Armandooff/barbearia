@@ -233,8 +233,8 @@ export default function BookingFlow({
             <ArrowLeft className="h-5 w-5" /> Voltar
           </button>
           <button type="button" onClick={onBack} className="ph-wordmark text-white" aria-label="Voltar para a página inicial">
-            <Scissors className="h-6 w-6 text-[color:var(--red)]" />
-            <span>PH <span className="text-[color:var(--red)]">BARBEARIA</span></span>
+            <img src={BARBERSHOP_INFO.logo} alt="" />
+            <span>G DOS <span className="text-[color:var(--brand-bright)]">CORTES</span></span>
           </button>
           <span className="w-16 shrink-0" aria-hidden="true" />
         </div>
@@ -243,7 +243,7 @@ export default function BookingFlow({
       <main className="ph-wizard-main">
         <div className="ph-greeting mb-10 text-center">
           <h1 className="text-display text-white">
-            Olá, <span className="text-[color:var(--red)]">{clientName}</span>!
+            Olá, <span className="text-[color:var(--brand-bright)]">{clientName}</span>!
           </h1>
           <p className="mt-2 text-lg text-[color:var(--muted)]">
             Escolha o serviço, data e horário do seu atendimento
@@ -275,7 +275,7 @@ export default function BookingFlow({
         {step === 'service' && (
           <section className="step-enter" key="service">
             <h2 className="text-display ph-step-title text-white">
-              Escolha o <span className="text-[color:var(--red)]">Serviço</span>
+              Escolha o <span className="text-[color:var(--brand-bright)]">Serviço</span>
             </h2>
 
             {services.length === 0 ? (
@@ -295,8 +295,8 @@ export default function BookingFlow({
                       aria-pressed={active}
                     >
                       <div className="mb-3 flex items-start justify-between gap-3">
-                        <Scissors className="h-6 w-6 text-[color:var(--red)]" />
-                        <span className="font-heading text-lg text-[color:var(--red)]">
+                        <Scissors className="h-6 w-6 text-[color:var(--brand-bright)]" />
+                        <span className="font-heading text-lg text-[color:var(--brand-bright)]">
                           R$ {formatPrice(item.price)}
                         </span>
                       </div>
@@ -304,6 +304,9 @@ export default function BookingFlow({
                       <p className="flex items-center gap-1.5 text-sm text-[color:var(--muted)]">
                         <Clock3 className="h-4 w-4" /> {item.duration} min
                       </p>
+                      {item.note && (
+                        <p className="mt-2 text-xs leading-5 text-[color:var(--muted)]">{item.note}</p>
+                      )}
                     </button>
                   );
                 })}
@@ -315,11 +318,11 @@ export default function BookingFlow({
         {step === 'date' && (
           <section className="step-enter" key="date">
             <h2 className="text-display ph-step-title text-white">
-              Escolha a <span className="text-[color:var(--red)]">Data</span>
+              Escolha a <span className="text-[color:var(--brand-bright)]">Data</span>
             </h2>
             <p className="ph-step-subtitle">
               Serviço selecionado:{' '}
-              <span className="font-heading text-[color:var(--red)]">{service?.name}</span>
+              <span className="font-heading text-[color:var(--brand-bright)]">{service?.name}</span>
             </p>
 
             <div className="ph-panel">
@@ -353,7 +356,7 @@ export default function BookingFlow({
                 {monthDays.map((date, index) => {
                   if (!date) return <span key={`empty-${index}`} aria-hidden="true" />;
                   const iso = toISO(date);
-                  const isAvailable = availableSet.has(iso) && date.getDay() !== 0;
+                  const isAvailable = availableSet.has(iso);
                   const isPast = date < startOfDay(new Date());
                   const isDisabled = !isAvailable || isPast;
                   const isSelected = selectedDate === iso;
@@ -380,7 +383,7 @@ export default function BookingFlow({
 
               <div className="ph-legend">
                 <span><span className="swatch" /> Disponível</span>
-                <span><span className="swatch red" /> Selecionado</span>
+                <span><span className="swatch brand" /> Selecionado</span>
               </div>
             </div>
 
@@ -395,11 +398,11 @@ export default function BookingFlow({
         {step === 'time' && selectedDate && (
           <section className="step-enter" key="time">
             <h2 className="text-display ph-step-title text-white">
-              Escolha o <span className="text-[color:var(--red)]">Horário</span>
+              Escolha o <span className="text-[color:var(--brand-bright)]">Horário</span>
             </h2>
             <p className="ph-step-subtitle">
               <span>{formatLongDate(selectedDate)}</span> •{' '}
-              <span className="font-heading text-[color:var(--red)]">{service?.name}</span>
+              <span className="font-heading text-[color:var(--brand-bright)]">{service?.name}</span>
             </p>
 
             {template.length === 0 ? (
@@ -463,7 +466,7 @@ export default function BookingFlow({
         {step === 'confirm' && selectedDate && selectedTime && service && (
           <section className="step-enter" key="confirm">
             <h2 className="text-display ph-step-title text-white">
-              Confirme seu <span className="text-[color:var(--red)]">Agendamento</span>
+              Confirme seu <span className="text-[color:var(--brand-bright)]">Agendamento</span>
             </h2>
 
             {paymentAppointment ? (
@@ -528,7 +531,14 @@ export default function BookingFlow({
                   </div>
                   <div className="ph-summary-row">
                     <dt>Serviço</dt>
-                    <dd className="text-white">{service.name}</dd>
+                    <dd className="max-w-[60%] text-white">
+                      {service.name}
+                      {service.note && (
+                        <span className="mt-1 block text-xs font-normal leading-4 text-[color:var(--muted)]">
+                          {service.note}
+                        </span>
+                      )}
+                    </dd>
                   </div>
                   <div className="ph-summary-row">
                     <dt>Data</dt>
@@ -569,8 +579,8 @@ export default function BookingFlow({
                         >
                           <span className="flex items-center gap-2">
                             {method.id === 'pix'
-                              ? <QrCode className="h-4 w-4 text-[color:var(--red)]" />
-                              : <Wallet className="h-4 w-4 text-[color:var(--red)]" />}
+                              ? <QrCode className="h-4 w-4 text-[color:var(--brand-bright)]" />
+                              : <Wallet className="h-4 w-4 text-[color:var(--brand-bright)]" />}
                             <strong>{method.label}</strong>
                           </span>
                           <small>{method.hint}</small>
@@ -599,7 +609,7 @@ export default function BookingFlow({
                   type="button"
                   onClick={handleConfirm}
                   disabled={submitting}
-                  className="ph-btn-red w-full py-4 text-lg"
+                  className="ph-btn-brand w-full py-4 text-lg"
                 >
                   {submitting ? (
                     <>Salvando...</>

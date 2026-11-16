@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { AlertCircle, CheckCircle2, Loader2, MessageCircle, Scissors } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Loader2, Scissors } from 'lucide-react';
 import LandingPage from './components/LandingPage';
 import BookingFlow from './components/BookingFlow';
 import { api } from './api/client';
 import { BARBERSHOP_INFO } from './data/mocks';
+import { WhatsappIcon } from './components/Icons';
 
 const STEPS = {
   LANDING: 'landing',
@@ -124,7 +125,7 @@ export default function App() {
             <Scissors className="h-10 w-10" />
           </div>
           <div className="flex items-center gap-3 text-[color:var(--muted)]">
-            <Loader2 className="ph-spinner text-[color:var(--red)]" />
+            <Loader2 className="ph-spinner text-[color:var(--brand-bright)]" />
             <p className="font-display text-xl uppercase tracking-[.2em]">Preparando a cadeira</p>
           </div>
         </div>
@@ -141,7 +142,7 @@ export default function App() {
           </div>
           <h1 className="text-display text-3xl text-white">Não foi possível carregar</h1>
           <p className="mt-3 text-sm leading-relaxed text-[color:var(--muted)]">{error}</p>
-          <button type="button" onClick={() => loadData()} className="ph-btn-red mt-6 w-full py-3.5">
+          <button type="button" onClick={() => loadData()} className="ph-btn-brand mt-6 w-full py-3.5">
             Tentar novamente
           </button>
         </div>
@@ -154,7 +155,7 @@ export default function App() {
     const weekdayRaw = new Date(`${booking.date}T00:00:00`).toLocaleDateString('pt-BR', { weekday: 'long' });
     const weekday = weekdayRaw.charAt(0).toUpperCase() + weekdayRaw.slice(1);
     const message = [
-      '*NOVO AGENDAMENTO - PH BARBEARIA*',
+      '*NOVO AGENDAMENTO - G DOS CORTES*',
       '',
       `*Cliente:* ${client.name}`,
       `*Data:* ${dateLabel} (${weekday})`,
@@ -177,7 +178,7 @@ export default function App() {
             Agendamento confirmado
           </h1>
           <p className="mt-2 text-sm text-[color:var(--muted)]">
-            Tudo pronto, {client.name.split(' ')[0]}. Te esperamos na PH Barbearia.
+            Tudo pronto, {client.name.split(' ')[0]}. Te esperamos na G dos Cortes.
           </p>
 
           <dl className="ph-summary mt-6 !border-[color:var(--border)] !bg-black/25 text-left">
@@ -209,9 +210,9 @@ export default function App() {
             rel="noopener noreferrer"
             className="ph-btn-outline mt-4 w-full"
           >
-            <MessageCircle className="h-5 w-5" /> Enviar no WhatsApp
+            <WhatsappIcon className="h-5 w-5" /> Enviar no WhatsApp
           </a>
-          <button type="button" onClick={handleReset} className="ph-btn-red mt-3 w-full py-3.5">
+          <button type="button" onClick={handleReset} className="ph-btn-brand mt-3 w-full py-3.5">
             <Scissors className="h-5 w-5" /> Novo agendamento
           </button>
         </div>

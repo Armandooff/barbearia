@@ -1,41 +1,121 @@
 import { useState } from 'react';
-import { ArrowRight, MapPin, Phone, Scissors } from 'lucide-react';
-import { BARBERSHOP_INFO } from '../data/mocks';
+import {
+  ArrowRight,
+  ArrowUpRight,
+  Clock3,
+  MapPin,
+  Phone,
+  Scissors,
+} from 'lucide-react';
+import { BARBERSHOP_INFO, GALLERY } from '../data/mocks';
 import Reveal from './Reveal';
+import { InstagramIcon, WhatsappIcon } from './Icons';
 
 const CURRENT_YEAR = new Date().getFullYear();
 
-function InstagramIcon({ className = '' }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
-      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
-      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
-    </svg>
-  );
-}
-
 function QuoteSection() {
-  const [before, after] = BARBERSHOP_INFO.quote.split('cuidado masculino');
+  const [before, after] = BARBERSHOP_INFO.quote.split(BARBERSHOP_INFO.quoteHighlight);
   return (
     <section className="ph-quote-section">
       <div className="ph-quote-pattern" aria-hidden="true" />
       <div className="ph-quote-halo" aria-hidden="true" />
-      <div className="absolute left-0 top-1/2 h-px w-1/4 -translate-y-1/2 bg-gradient-to-r from-transparent via-red-600/50 to-red-600" aria-hidden="true" />
-      <div className="absolute right-0 top-1/2 h-px w-1/4 -translate-y-1/2 bg-gradient-to-l from-transparent via-red-600/50 to-red-600" aria-hidden="true" />
+      <div className="absolute left-0 top-1/2 h-px w-1/4 -translate-y-1/2 bg-gradient-to-r from-transparent via-blue-500/50 to-blue-500" aria-hidden="true" />
+      <div className="absolute right-0 top-1/2 h-px w-1/4 -translate-y-1/2 bg-gradient-to-l from-transparent via-blue-500/50 to-blue-500" aria-hidden="true" />
       <div className="ph-container relative z-10">
         <Reveal className="relative mx-auto max-w-4xl text-center">
           <span className="ph-quote-mark" aria-hidden="true">&ldquo;</span>
           <h2 className="text-quote text-[clamp(1.85rem,5vw,3.6rem)] leading-tight text-white">
-            &ldquo;{before}<span className="text-[color:var(--red)]">cuidado masculino</span>{after}&rdquo;
+            &ldquo;{before}<span className="text-[color:var(--brand-bright)]">{BARBERSHOP_INFO.quoteHighlight}</span>{after}&rdquo;
           </h2>
           <div className="ph-quote-divider" aria-hidden="true">
             <span className="line" />
             <span className="diamond" />
             <span className="line" />
           </div>
-          <p className="font-display mt-8 text-xl tracking-[.22em] text-[color:var(--red)]">— {BARBERSHOP_INFO.author}</p>
+          <p className="font-display mt-8 text-xl tracking-[.22em] text-[color:var(--brand-bright)]">
+            — {BARBERSHOP_INFO.quoteAuthor}
+          </p>
         </Reveal>
+      </div>
+    </section>
+  );
+}
+
+function GallerySection() {
+  return (
+    <section className="ph-gallery-section">
+      <div className="ph-gallery-glow" aria-hidden="true" />
+      <div className="ph-container relative z-10">
+        <Reveal className="mx-auto max-w-3xl text-center">
+          <span className="ph-kicker">Direto do Instagram</span>
+          <h2 className="text-display mt-4 text-[clamp(2.2rem,6vw,3.8rem)] text-white">
+            CORTES & <span className="text-gradient-brand">ESTILO</span>
+          </h2>
+          <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-[color:var(--muted)]">
+            Acompanhe os trabalhos, a tabela de preços e os horários no perfil{' '}
+            <a
+              href={BARBERSHOP_INFO.instagram}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-[color:var(--brand-bright)] hover:text-white"
+            >
+              {BARBERSHOP_INFO.instagramHandle}
+            </a>.
+          </p>
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+            {BARBERSHOP_INFO.highlights.map((highlight) => (
+              <a
+                key={highlight.label}
+                href={highlight.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-full border border-[color:var(--border)] bg-[color:var(--card)] px-3 py-1.5 text-[0.62rem] font-bold uppercase tracking-[.12em] text-[color:var(--muted)] transition hover:border-[color:var(--brand-bright)] hover:text-white"
+              >
+                {highlight.label}
+              </a>
+            ))}
+          </div>
+        </Reveal>
+
+        <div className="ph-gallery-grid">
+          {GALLERY.map((item, index) => (
+            <Reveal
+              key={item.src}
+              delay={index * 90}
+              className={item.featured ? 'ph-gallery-featured' : ''}
+            >
+              <a
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ph-gallery-card block"
+                aria-label={`${item.label} — abrir no Instagram`}
+              >
+                <img src={item.src} alt={item.alt} loading="lazy" />
+                <span className="ph-gallery-caption">
+                  <strong>{item.label}</strong>
+                  <span>{item.caption}</span>
+                </span>
+              </a>
+            </Reveal>
+          ))}
+
+          <Reveal delay={GALLERY.length * 90}>
+            <a
+              href={BARBERSHOP_INFO.instagram}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ph-gallery-card ph-gallery-cta"
+            >
+              <span className="ig-badge"><InstagramIcon className="h-6 w-6" /></span>
+              <span className="font-heading text-lg text-white">{BARBERSHOP_INFO.instagramHandle}</span>
+              <span className="text-xs uppercase tracking-[.16em] text-[color:var(--muted)]">Ver perfil completo</span>
+              <span className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-[color:var(--brand-bright)]">
+                Abrir Instagram <ArrowUpRight className="h-4 w-4" />
+              </span>
+            </a>
+          </Reveal>
+        </div>
       </div>
     </section>
   );
@@ -54,20 +134,27 @@ function BookingSection({ onNameSubmit }) {
     onNameSubmit(trimmed);
   };
 
+  const whatsappHref = `https://wa.me/${BARBERSHOP_INFO.whatsapp}?text=${encodeURIComponent(
+    'Olá, Guilherme! Gostaria de agendar um horário na G dos Cortes.',
+  )}`;
+  const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+    `${BARBERSHOP_INFO.addressShort}, ${BARBERSHOP_INFO.neighborhood}`,
+  )}`;
+
   return (
     <section id="agendamento" className="ph-booking-section">
       <div className="ph-booking-glow" aria-hidden="true" />
-      <Scissors className="absolute right-10 top-16 h-32 w-32 rotate-45 text-red-600/10" aria-hidden="true" />
-      <Scissors className="absolute bottom-16 left-10 h-24 w-24 -rotate-45 text-red-600/10" aria-hidden="true" />
+      <Scissors className="absolute right-10 top-16 h-32 w-32 rotate-45 text-blue-500/10" aria-hidden="true" />
+      <Scissors className="absolute bottom-16 left-10 h-24 w-24 -rotate-45 text-blue-500/10" aria-hidden="true" />
       <div className="ph-container relative z-10">
         <Reveal className="mx-auto max-w-3xl text-center">
           <span className="ph-kicker">Agendamento Online</span>
           <h2 className="text-display mt-4 text-[clamp(2.2rem,6vw,3.8rem)] text-white">
-            DESEJA MARCAR UM HORÁRIO COM{' '}
-            <span className="text-[color:var(--red)]">{BARBERSHOP_INFO.nickname}</span>?
+            RESERVE SEU <span className="text-[color:var(--brand-bright)]">HORÁRIO</span>
           </h2>
           <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-[color:var(--muted)]">
-            Escreva seu nome abaixo e clique em OK para escolher o serviço e horário
+            Escolha o serviço, a data e o horário do seu atendimento. Atendimento aos fins de semana,
+            com estilo, qualidade e respeito.
           </p>
 
           <form onSubmit={handleSubmit} className="mx-auto mt-10 max-w-lg" noValidate>
@@ -83,19 +170,30 @@ function BookingSection({ onNameSubmit }) {
                 className="ph-input flex-1"
                 required
               />
-              <button type="submit" className="ph-btn-red h-14 shrink-0 px-8 text-lg">
+              <button type="submit" className="ph-btn-brand h-14 shrink-0 px-8 text-lg">
                 OK <ArrowRight className="h-5 w-5" />
               </button>
             </div>
             {error && <p className="mt-3 text-sm text-[color:var(--danger)]" role="alert">{error}</p>}
           </form>
 
-          <div className="ph-address-card mx-auto mt-12 max-w-lg text-left">
-            <p className="mb-2 flex items-center gap-2 text-sm text-[color:var(--muted)]">
-              <MapPin className="h-4 w-4 text-[color:var(--red)]" /> Endereço
-            </p>
-            <p className="font-heading text-lg text-white">{BARBERSHOP_INFO.address}</p>
+          <div className="ph-info-grid">
+            <a href={mapsHref} target="_blank" rel="noopener noreferrer" className="ph-info-card">
+              <dt><MapPin className="h-3.5 w-3.5" /> Endereço</dt>
+              <dd>{BARBERSHOP_INFO.addressShort}<br />{BARBERSHOP_INFO.neighborhood}</dd>
+            </a>
+            <div className="ph-info-card">
+              <dt><Clock3 className="h-3.5 w-3.5" /> Horários</dt>
+              <dd>{BARBERSHOP_INFO.scheduleDays}<br />{BARBERSHOP_INFO.scheduleHours}</dd>
+            </div>
+            <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="ph-info-card">
+              <dt><WhatsappIcon className="h-3.5 w-3.5" /> WhatsApp</dt>
+              <dd>{BARBERSHOP_INFO.phone}<br />Falar com Guilherme</dd>
+            </a>
           </div>
+          <p className="mt-4 text-xs uppercase tracking-[.16em] text-[color:var(--muted)]">
+            {BARBERSHOP_INFO.slotDuration}
+          </p>
         </Reveal>
       </div>
     </section>
@@ -108,41 +206,59 @@ function Footer() {
       <div className="ph-container">
         <div className="flex flex-col items-center justify-between gap-8 md:flex-row">
           <div className="flex items-center gap-3">
-            <div className="grid h-12 w-12 place-items-center rounded-full bg-gradient-red shadow-[var(--shadow-red)]">
-              <Scissors className="h-6 w-6 text-white" />
-            </div>
+            <img src={BARBERSHOP_INFO.logo} alt="Logo G dos Cortes" className="h-14 w-14 rounded-full border border-blue-500/40 object-cover shadow-[0_0_22px_rgba(29,92,255,0.25)]" />
             <div>
               <h3 className="font-display text-2xl tracking-wide text-white">
-                PH <span className="text-[color:var(--red)]">BARBEARIA</span>
+                G DOS <span className="text-[color:var(--brand-bright)]">CORTES</span>
               </h3>
-              <p className="text-xs uppercase tracking-[.15em] text-[color:var(--muted)]">Estilo &amp; Precisão</p>
+              <p className="text-xs uppercase tracking-[.15em] text-[color:var(--muted)]">
+                {BARBERSHOP_INFO.subtitle}
+              </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm text-[color:var(--muted)]">
-            <a href={`tel:+${BARBERSHOP_INFO.whatsapp}`} className="flex items-center gap-2 transition-colors hover:text-[color:var(--red)]">
+          <div className="flex flex-col items-center gap-2 text-sm text-[color:var(--muted)]">
+            <a href={`tel:+${BARBERSHOP_INFO.whatsapp}`} className="flex items-center gap-2 transition-colors hover:text-[color:var(--brand-bright)]">
               <Phone className="h-4 w-4" /> {BARBERSHOP_INFO.phone}
             </a>
+            <span className="flex items-center gap-2 text-center">
+              <MapPin className="h-4 w-4 shrink-0" /> {BARBERSHOP_INFO.address}
+            </span>
             <span className="flex items-center gap-2">
-              <MapPin className="h-4 w-4" /> {BARBERSHOP_INFO.address}
+              <Clock3 className="h-4 w-4" /> {BARBERSHOP_INFO.hours}
             </span>
           </div>
 
-          <a
-            href={BARBERSHOP_INFO.instagram}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Abrir Instagram da barbearia"
-            className="ph-social"
-          >
-            <InstagramIcon className="h-5 w-5" />
-          </a>
+          <div className="flex items-center gap-3">
+            <a
+              href={BARBERSHOP_INFO.instagram}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Abrir Instagram da barbearia"
+              className="ph-social"
+            >
+              <InstagramIcon className="h-5 w-5" />
+            </a>
+            <a
+              href={`https://wa.me/${BARBERSHOP_INFO.whatsapp}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Falar no WhatsApp"
+              className="ph-social"
+            >
+              <WhatsappIcon className="h-5 w-5" />
+            </a>
+          </div>
         </div>
 
-        <div className="mt-8 border-t border-white/5 pt-8 text-center">
-          <p className="text-sm text-[color:var(--muted)]">
-            © {CURRENT_YEAR} PH Barbearia. Todos os direitos reservados.
+        <div className="mt-8 flex flex-col items-center gap-2 border-t border-white/5 pt-8 text-center">
+          <p className="font-display text-lg tracking-[.12em] text-[color:var(--brand-bright)]">
+            {BARBERSHOP_INFO.slogan.toUpperCase()}
           </p>
+          <p className="text-sm text-[color:var(--muted)]">
+            © {CURRENT_YEAR} G dos Cortes. Todos os direitos reservados.
+          </p>
+          <p className="text-xs text-[color:var(--muted)]">Sempre cuidando de você.</p>
         </div>
       </div>
     </footer>
@@ -150,8 +266,6 @@ function Footer() {
 }
 
 export default function LandingPage({ onNameSubmit }) {
-  const [welcomeBefore, welcomeAfter] = BARBERSHOP_INFO.welcome.split(BARBERSHOP_INFO.name);
-
   return (
     <main className="min-h-screen bg-[color:var(--bg)]">
       <section className="ph-hero">
@@ -163,13 +277,12 @@ export default function LandingPage({ onNameSubmit }) {
 
         <div className="relative z-10 w-full max-w-4xl text-center">
           <div className="anim-pop inline-flex" style={{ animationDelay: '120ms' }}>
-            <div className="ph-scissors-badge">
-              <Scissors className="h-10 w-10" />
-            </div>
+            <img src={BARBERSHOP_INFO.logo} alt="Logo G dos Cortes" className="ph-brand-logo" />
           </div>
 
-          <h1 className="text-display ph-hero-title anim-rise mt-6 text-white" style={{ animationDelay: '250ms' }}>
-            PH <span className="text-gradient-red">BARBEARIA</span>
+          <h1 className="text-display ph-hero-title anim-rise mt-6" style={{ animationDelay: '250ms' }} aria-label="G dos Cortes">
+            <span className="text-chrome">G DOS</span>
+            <span className="text-gradient-brand word-accent">CORTES</span>
           </h1>
 
           <p
@@ -178,20 +291,35 @@ export default function LandingPage({ onNameSubmit }) {
           >
             {BARBERSHOP_INFO.tagline}
           </p>
+          <p
+            className="font-heading anim-rise mt-2 text-xs uppercase tracking-[.24em] text-[color:var(--brand-bright)] sm:text-sm"
+            style={{ animationDelay: '480ms' }}
+          >
+            {BARBERSHOP_INFO.subtitle}
+          </p>
 
           <p
             className="anim-rise mx-auto mt-8 max-w-2xl text-[clamp(1rem,2.3vw,1.2rem)] leading-relaxed text-white/80"
             style={{ animationDelay: '550ms' }}
           >
-            {welcomeBefore}
-            <span className="font-semibold text-[color:var(--red)]">{BARBERSHOP_INFO.name}</span>
-            {welcomeAfter}
+            {BARBERSHOP_INFO.welcome}
           </p>
 
-          <div className="anim-pop mt-12 inline-flex" style={{ animationDelay: '750ms' }}>
-            <a href="#agendamento" className="ph-btn-red">
-              <Scissors className="h-5 w-5" /> Agendar Horário
+          <div className="anim-pop mt-10 inline-flex" style={{ animationDelay: '750ms' }}>
+            <a href="#agendamento" className="ph-btn-brand">
+              <Scissors className="h-5 w-5" /> Agendar Meu Corte
             </a>
+          </div>
+
+          <div
+            className="anim-fade mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[0.68rem] uppercase tracking-[.18em] text-[color:var(--muted)]"
+            style={{ animationDelay: '900ms' }}
+          >
+            <span>{BARBERSHOP_INFO.scheduleDays}</span>
+            <span className="hidden h-1 w-1 rounded-full bg-[color:var(--brand)] sm:block" aria-hidden="true" />
+            <span>{BARBERSHOP_INFO.scheduleHours}</span>
+            <span className="hidden h-1 w-1 rounded-full bg-[color:var(--brand)] sm:block" aria-hidden="true" />
+            <span>50 min por atendimento</span>
           </div>
         </div>
 
@@ -202,6 +330,7 @@ export default function LandingPage({ onNameSubmit }) {
       </section>
 
       <QuoteSection />
+      <GallerySection />
       <BookingSection onNameSubmit={onNameSubmit} />
       <Footer />
     </main>

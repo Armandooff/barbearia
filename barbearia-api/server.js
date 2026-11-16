@@ -31,26 +31,70 @@ const DATABASE_URL = process.env.DATABASE_URL || process.env.POSTGRES_URL;
 const db = DATABASE_URL ? new Pool({ connectionString: DATABASE_URL, max: 2, idleTimeoutMillis: 10_000, connectionTimeoutMillis: 10_000 }) : null;
 const dbContext = new AsyncLocalStorage();
 
+// Catálogo extraído da tabela de preços e do link da bio de @gduscortes_.
 const defaultServices = [
-  { id: 'cut', name: 'Corte de Cabelo', duration: 30, price: 35 },
-  { id: 'beard', name: 'Barba', duration: 20, price: 25 },
-  { id: 'eyebrow', name: 'Sobrancelha', duration: 15, price: 15 },
-  { id: 'combo', name: 'Corte + Barba', duration: 50, price: 55 },
+  { id: 'degrade', name: 'Corte Degradê', duration: 40, price: 25 },
+  { id: 'social', name: 'Corte Social', duration: 30, price: 15 },
+  { id: 'tesoura', name: 'Corte na Tesoura', duration: 45, price: 30 },
+  { id: 'barba', name: 'Barba', duration: 30, price: 35 },
+  { id: 'corte-barba', name: 'Corte + Barba', duration: 60, price: 55 },
+  { id: 'sobrancelha', name: 'Sobrancelha', duration: 15, price: 5 },
+  { id: 'pezinho', name: 'Pezinho', duration: 15, price: 5 },
+  { id: 'limpeza-pele', name: 'Limpeza de Pele', duration: 20, price: 15 },
+  { id: 'completo', name: 'Atendimento Completo', duration: 60, price: 40, note: 'Cabelo + sobrancelha + bigode + limpeza de pele' },
 ];
 
+// Atendimento apenas quinta, sábado e domingo (08h às 18h).
 function defaultDates() {
   const today = new Date();
   const dates = [];
-  for (let i = 1; i <= 14; i++) {
+  for (let i = 1; i <= 56; i++) {
     const d = new Date(today);
     d.setDate(today.getDate() + i);
-    if (d.getDay() === 0) d.setDate(d.getDate() + 1);
-    dates.push(d.toISOString().split('T')[0]);
+    if ([0, 4, 6].includes(d.getDay())) {
+      const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      dates.push(iso);
+    }
   }
   return [...new Set(dates)].sort();
 }
 
-const defaultTemplate = ['09:00','09:30','10:00','10:30','11:00','14:00','14:30','15:00','15:30','16:00','16:30','17:00'];
+// Intervalos de 50 minutos: 08:00 até 18:00.
+const defaultTemplate = ['08:00','08:50','09:40','10:30','11:20','12:10','13:00','13:50','14:40','15:30','16:20','17:10'];
+
+function todayISO() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
+// Se todas as datas salvas já passaram, renova a agenda para as próximas semanas.
+function refreshStaleDates(current) {
+  const dates = Array.isArray(current.availableDates) ? current.availableDates : [];
+  if (!dates.length || dates.some((date) => date >= todayISO())) return false;
+  current.availableDates = defaultDates();
+  current.blocked = {};
+  return true;
+}
+
+// Estado antigo (antes do perfil atual): troca apenas quando ninguém personalizou o catálogo.
+const legacyDefaultServices = [
+  { id: 'cut', name: 'Corte de Cabelo' },
+  { id: 'beard', name: 'Barba' },
+  { id: 'eyebrow', name: 'Sobrancelha' },
+  { id: 'combo', name: 'Corte + Barba' },
+];
+
+function migrateLegacyCatalog(current) {
+  const services = current.services;
+  if (!Array.isArray(services) || services.length !== legacyDefaultServices.length) return false;
+  const isLegacy = legacyDefaultServices.every((legacy) =>
+    services.some((service) => service.id === legacy.id && service.name === legacy.name)
+  );
+  if (!isLegacy) return false;
+  current.services = defaultServices.map((service) => ({ ...service }));
+  current.slotTemplate = [...defaultTemplate];
+  return true;
+}
 let stateData = {
   services: defaultServices,
   availableDates: defaultDates(),
@@ -88,6 +132,8 @@ stateData.appointments = (stateData.appointments || []).map((appointment) => ({
   paymentMethod: appointment.paymentMethod || 'onsite',
   paymentStatus: appointment.paymentStatus || 'pending',
 }));
+refreshStaleDates(stateData);
+migrateLegacyCatalog(stateData);
 
 async function persist() {
   if (db) {
@@ -155,6 +201,8 @@ function hydrateState(payload) {
     paymentMethod: appointment.paymentMethod || 'onsite',
     paymentStatus: appointment.paymentStatus || 'pending',
   }));
+  refreshStaleDates(next);
+  migrateLegacyCatalog(next);
   rebuildSlots(next);
   return next;
 }
