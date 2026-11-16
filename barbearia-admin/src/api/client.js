@@ -27,9 +27,21 @@ async function request(path, options = {}) {
   }
 
   if (res.status === 401) {
+    if (path === '/api/auth/login') {
+      let msg = 'Senha incorreta.';
+      try {
+        const body = await res.json();
+        msg = body.error || msg;
+      } catch { /* resposta sem JSON */ }
+      const error = new Error(msg);
+      error.status = 401;
+      throw error;
+    }
+    const hadToken = Boolean(token);
     setToken(null);
     const error = new Error('Sessão expirada. Entre novamente.');
     error.status = 401;
+    if (hadToken) window.dispatchEvent(new Event('admin:unauthorized'));
     throw error;
   }
   if (!res.ok) {

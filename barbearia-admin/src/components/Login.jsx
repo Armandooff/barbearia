@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { ArrowRight, Loader2, Lock } from 'lucide-react';
 import { api } from '../api/client';
 
-export default function Login({ onSuccess }) {
+export default function Login({ onSuccess, notice = '', onNoticeDismiss }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (notice && onNoticeDismiss) onNoticeDismiss();
     setLoading(true);
     setError('');
     try {
@@ -38,6 +39,12 @@ export default function Login({ onSuccess }) {
             G dos Cortes • Estilo, qualidade e respeito.
           </p>
         </div>
+
+        {notice && (
+          <div className="mt-5 rounded-md border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-center text-sm text-amber-300" role="status">
+            {notice}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="mt-7 space-y-4">
           <div>

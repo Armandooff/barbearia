@@ -439,7 +439,7 @@ app.post('/api/auth/login', async (req, res) => {
   const { password } = req.body || {};
   const ok = await bcrypt.compare(password || '', adminHash);
   if (!ok) return res.status(401).json({ error: 'Senha incorreta.' });
-  const token = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '8h' });
+  const token = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '7d' });
   res.json({ token });
 });
 
