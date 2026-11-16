@@ -73,7 +73,7 @@ export default function App() {
   const handleNameSubmit = (name) => {
     setClientName(name);
     setStep(STEPS.BOOKING);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
   const refreshAvailability = async () => {
@@ -98,7 +98,7 @@ export default function App() {
       setClient({ name: clientName, service });
       setBooking({ date: appointment.date, time: appointment.time });
       setStep(STEPS.SUCCESS);
-      window.scrollTo({ top: 0, behavior: 'auto' });
+      window.scrollTo({ top: 0, behavior: 'instant' });
       await refreshAvailability();
       return appointment;
     } catch (e) {
@@ -111,7 +111,7 @@ export default function App() {
     setClient(null);
     setBooking(null);
     setStep(STEPS.LANDING);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'instant' });
     loadData();
   };
 
@@ -232,7 +232,7 @@ export default function App() {
           onSchedule={handleSchedule}
           onBack={() => {
             setStep(STEPS.LANDING);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            window.scrollTo({ top: 0, behavior: 'instant' });
           }}
         />
       )}

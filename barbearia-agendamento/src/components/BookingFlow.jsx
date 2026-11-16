@@ -116,7 +116,7 @@ export default function BookingFlow({
     requestIdRef.current = null;
     setError('');
     setStep('date');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
   const selectDate = (date) => {
@@ -127,13 +127,13 @@ export default function BookingFlow({
     requestIdRef.current = null;
     setError('');
     setStep('time');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
   const changeStep = (next) => {
     setError('');
     setStep(next);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
   const goBack = () => {
@@ -201,7 +201,7 @@ export default function BookingFlow({
         requestIdRef.current = null;
         setSelectedTime(null);
         setStep('time');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: 'instant' });
       }
     } finally {
       setSubmitting(false);
@@ -221,7 +221,7 @@ export default function BookingFlow({
             <img src={BARBERSHOP_INFO.logo} alt="" />
             <span>G DOS <span className="text-[color:var(--brand-bright)]">CORTES</span></span>
           </button>
-          <span className="w-16 shrink-0" aria-hidden="true" />
+          <span className="w-8 shrink-0 sm:w-16" aria-hidden="true" />
         </div>
       </header>
 
@@ -357,7 +357,7 @@ export default function BookingFlow({
                         'ph-cal-day',
                         isAvailable && !isPast ? 'available' : '',
                         isSelected ? 'selected' : '',
-                        isToday ? 'today' : '',
+                        isToday && isAvailable && !isPast ? 'today' : '',
                       ].join(' ')}
                     >
                       {date.getDate()}

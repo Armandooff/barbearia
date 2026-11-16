@@ -137,8 +137,7 @@ migrateLegacyCatalog(stateData);
 
 async function persist() {
   if (db) {
-    const client = dbContext.getStore();
-    const connection = client || db;
+    const connection = dbContext.getStore()?.client || db;
     await connection.query('UPDATE barbearia_state SET payload = $1::jsonb WHERE id = 1', [JSON.stringify(state)]);
     return;
   }

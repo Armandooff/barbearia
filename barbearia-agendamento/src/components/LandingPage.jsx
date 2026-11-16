@@ -286,33 +286,33 @@ export default function LandingPage({ onNameSubmit }) {
           </h1>
 
           <p
-            className="font-heading anim-rise mt-5 text-[clamp(1.05rem,3vw,1.5rem)] uppercase tracking-[.12em] text-[color:var(--muted)]"
+            className="font-heading ph-hero-tagline anim-rise mt-5 text-[clamp(1.05rem,3vw,1.5rem)] uppercase tracking-[.12em] text-[color:var(--muted)]"
             style={{ animationDelay: '400ms' }}
           >
             {BARBERSHOP_INFO.tagline}
           </p>
           <p
-            className="font-heading anim-rise mt-2 text-xs uppercase tracking-[.24em] text-[color:var(--brand-bright)] sm:text-sm"
+            className="font-heading ph-hero-subtitle anim-rise mt-2 text-xs uppercase tracking-[.24em] text-[color:var(--brand-bright)] sm:text-sm"
             style={{ animationDelay: '480ms' }}
           >
             {BARBERSHOP_INFO.subtitle}
           </p>
 
           <p
-            className="anim-rise mx-auto mt-8 max-w-2xl text-[clamp(1rem,2.3vw,1.2rem)] leading-relaxed text-white/80"
+            className="ph-hero-copy anim-rise mx-auto mt-8 max-w-2xl text-[clamp(1rem,2.3vw,1.2rem)] leading-relaxed text-white/80"
             style={{ animationDelay: '550ms' }}
           >
             {BARBERSHOP_INFO.welcome}
           </p>
 
-          <div className="anim-pop mt-10 inline-flex" style={{ animationDelay: '750ms' }}>
+          <div className="ph-hero-cta anim-pop mt-10 inline-flex" style={{ animationDelay: '750ms' }}>
             <a href="#agendamento" className="ph-btn-brand">
               <Scissors className="h-5 w-5" /> Agendar Meu Corte
             </a>
           </div>
 
           <div
-            className="anim-fade mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[0.68rem] uppercase tracking-[.18em] text-[color:var(--muted)]"
+            className="ph-hero-meta anim-fade mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[0.68rem] uppercase tracking-[.18em] text-[color:var(--muted)]"
             style={{ animationDelay: '900ms' }}
           >
             <span>{BARBERSHOP_INFO.scheduleDays}</span>

@@ -40,8 +40,9 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 button, input, textarea, select { font: inherit; }
-button { cursor: pointer; }
+button { cursor: pointer; touch-action: manipulation; }
 button:disabled { cursor: not-allowed; }
+a { touch-action: manipulation; }
 a { color: inherit; }
 ::selection { background: rgba(29, 92, 255, 0.45); color: #fff; }
 :focus-visible { outline: 2px solid var(--brand-bright); outline-offset: 3px; }
@@ -462,6 +463,7 @@ a.ph-info-card:hover { border-color: rgba(77, 139, 255, 0.6); background: rgba(2
   backdrop-filter: blur(12px);
 }
 .ph-wordmark { display: inline-flex; align-items: center; gap: 0.55rem; font-family: var(--font-display); font-size: 1.3rem; letter-spacing: 0.04em; text-transform: uppercase; }
+.ph-wordmark span { white-space: nowrap; }
 .ph-wordmark img {
   width: 2.1rem;
   height: 2.1rem;
@@ -767,6 +769,63 @@ a.ph-info-card:hover { border-color: rgba(77, 139, 255, 0.6); background: rgba(2
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes slide-in { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
 .step-enter { animation: slide-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* ------------------------------------------------------------ mobile UX */
+@media (max-width: 640px) {
+  .ph-hero { padding: 2.5rem 1.25rem 3.25rem; }
+  .ph-brand-logo { width: 4.75rem; height: 4.75rem; }
+  .ph-hero-title { margin-top: 1rem; font-size: clamp(2.6rem, 12.2vw, 3.4rem); }
+  .ph-hero-tagline { margin-top: 1rem; }
+  .ph-hero-subtitle { margin-top: 0.4rem; }
+  .ph-hero-copy { margin-top: 1.5rem; }
+  .ph-hero-cta { margin-top: 1.75rem; }
+  .ph-hero-meta { margin-top: 1.25rem; }
+  .ph-hero-ring.one { top: 3rem; left: 1rem; width: 6rem; height: 6rem; }
+  .ph-hero-ring.two { top: 6.5rem; right: 1rem; width: 4.5rem; height: 4.5rem; }
+  .ph-booking-section > svg { display: none; }
+
+  .ph-wizard-main { padding-top: 1.5rem; }
+  .ph-greeting h1 { font-size: clamp(1.7rem, 8vw, 2.3rem); overflow-wrap: anywhere; }
+  .ph-step-title { font-size: clamp(1.45rem, 7vw, 1.9rem); }
+  .ph-greeting p { font-size: 1rem; }
+
+  .ph-wordmark { font-size: 1.15rem; gap: 0.35rem; }
+  .ph-wordmark img { width: 1.85rem; height: 1.85rem; }
+
+  .ph-panel { padding: 1rem; }
+  .ph-cal-grid { gap: 0.2rem; }
+  .ph-cal-day { min-height: 2.35rem; }
+  .ph-cal-nav { width: 2.75rem; height: 2.75rem; }
+
+  .ph-slot { min-height: 3rem; }
+  .ph-btn-ghost,
+  .ph-btn-outline { min-height: 2.75rem; }
+
+  .ph-summary { padding: 1rem; }
+  .ph-summary-row dt { flex-shrink: 0; }
+  .ph-summary-row dd { min-width: 0; overflow-wrap: anywhere; }
+
+  .ph-payment-grid { grid-template-columns: 1fr; }
+  .ph-payment-option { min-height: 4.5rem; }
+
+  .ph-modal-panel { max-height: calc(100dvh - 2rem); overflow-y: auto; padding: 1.5rem; }
+  .ph-state-card { padding: 1.5rem; }
+}
+
+@media (max-width: 380px) {
+  .ph-steps { gap: 0.25rem; }
+  .ph-steps > div { gap: 0.25rem; }
+  .ph-step-dot { width: 2.1rem; height: 2.1rem; font-size: 0.9rem; }
+  .ph-step-line { width: 1.1rem; }
+  .ph-wordmark { font-size: 1.05rem; }
+  .ph-wordmark img { width: 1.7rem; height: 1.7rem; }
+  .ph-dev-badge { display: none; }
+  .ph-cal-weekdays span { font-size: 0.68rem; }
+}
+
+@media (max-height: 720px) {
+  .ph-scroll-indicator { display: none; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
