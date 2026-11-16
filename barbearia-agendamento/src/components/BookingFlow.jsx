@@ -282,7 +282,7 @@ export default function BookingFlow({
                       <div className="mb-3 flex items-start justify-between gap-3">
                         <Scissors className="h-6 w-6 text-[color:var(--brand-bright)]" />
                         <span className="font-heading text-lg text-[color:var(--brand-bright)]">
-                          R$ {formatPrice(item.price)}
+                          <span className="ph-currency">R$</span> {formatPrice(item.price)}
                         </span>
                       </div>
                       <h3 className="font-heading mb-1 text-lg text-white">{item.name}</h3>
@@ -493,7 +493,7 @@ export default function BookingFlow({
               </div>
               <div className="ph-summary-row items-center">
                 <dt>Valor</dt>
-                <dd className="ph-summary-total">R$ {formatPrice(service.price)}</dd>
+                <dd className="ph-summary-total"><span className="ph-currency">R$</span> {formatPrice(service.price)}</dd>
               </div>
             </dl>
 

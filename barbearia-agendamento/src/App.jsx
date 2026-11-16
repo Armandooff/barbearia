@@ -198,7 +198,7 @@ export default function App() {
             </div>
             <div className="ph-summary-row items-center">
               <dt>Valor</dt>
-              <dd className="ph-summary-total">R$ {formatPrice(client.service.price)}</dd>
+              <dd className="ph-summary-total"><span className="ph-currency">R$</span> {formatPrice(client.service.price)}</dd>
             </div>
           </dl>
 

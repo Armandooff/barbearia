@@ -616,6 +616,8 @@ a.ph-info-card:hover { border-color: rgba(77, 139, 255, 0.6); background: rgba(2
 .ph-summary-row dt { color: var(--muted); font-size: 0.95rem; }
 .ph-summary-row dd { margin: 0; font-family: var(--font-heading); text-align: right; }
 .ph-summary-total { font-family: var(--font-display); font-size: 1.8rem; color: var(--brand-bright); }
+.ph-currency { font-family: var(--font-body); font-weight: 700; font-size: 0.82em; letter-spacing: 0; }
+.ph-summary-total .ph-currency { font-size: 0.55em; vertical-align: 0.1em; }
 
 .ph-payment-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
 .ph-payment-option {

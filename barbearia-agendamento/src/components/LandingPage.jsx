@@ -164,6 +164,7 @@ function BookingSection({ onNameSubmit }) {
                 id="booking-name"
                 type="text"
                 autoComplete="name"
+                autoCapitalize="words"
                 value={name}
                 onChange={(event) => { setName(event.target.value); setError(''); }}
                 placeholder="Digite seu nome..."
