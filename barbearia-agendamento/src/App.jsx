@@ -1,18 +1,19 @@
 import { useState, useEffect, useCallback } from 'react';
+import { AlertCircle, CheckCircle2, Loader2, MessageCircle, Scissors } from 'lucide-react';
 import LandingPage from './components/LandingPage';
-import IdentificationForm from './components/IdentificationForm';
-import CalendarSlots from './components/CalendarSlots';
+import BookingFlow from './components/BookingFlow';
 import { api } from './api/client';
-import { CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
-import GraffitiWall from './components/GraffitiWall';
-import BarberIllustration from './components/BarberIllustration';
+import { BARBERSHOP_INFO } from './data/mocks';
 
 const STEPS = {
   LANDING: 'landing',
-  IDENTIFY: 'identify',
-  CALENDAR: 'calendar',
+  BOOKING: 'booking',
   SUCCESS: 'success',
 };
+
+function formatPrice(value) {
+  return Number(value || 0).toFixed(2).replace('.', ',');
+}
 
 export default function App() {
   const [step, setStep] = useState(STEPS.LANDING);
@@ -23,21 +24,26 @@ export default function App() {
   const [services, setServices] = useState([]);
   const [availableDates, setAvailableDates] = useState([]);
   const [availableSlots, setAvailableSlots] = useState({});
+  const [slotTemplate, setSlotTemplate] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const loadData = async () => {
-    setLoading(true);
-    setError('');
+  const loadData = async (silent = false) => {
+    if (!silent) {
+      setLoading(true);
+      setError('');
+    }
     try {
       const [svc, avail] = await Promise.all([api.getServices(), api.getAvailability()]);
       setServices(svc);
-      setAvailableDates(avail.dates);
-      setAvailableSlots(avail.slots);
+      setAvailableDates(avail.dates || []);
+      setAvailableSlots(avail.slots || {});
+      setSlotTemplate(avail.template || []);
+      if (silent) setError('');
     } catch (e) {
-      setError(e.message || 'Falha ao carregar dados');
+      if (!silent) setError(e.message || 'Falha ao carregar dados');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -48,12 +54,13 @@ export default function App() {
     const interval = setInterval(async () => {
       try {
         const avail = await api.getAvailability();
-        setAvailableDates(avail.dates);
-        setAvailableSlots(avail.slots);
-      } catch {}
+        setAvailableDates(avail.dates || []);
+        setAvailableSlots(avail.slots || {});
+        setSlotTemplate(avail.template || []);
+      } catch { /* mantém os dados atuais */ }
     }, 15000);
     const onVisible = () => {
-      if (document.visibilityState === 'visible') loadData();
+      if (document.visibilityState === 'visible') loadData(true);
     };
     document.addEventListener('visibilitychange', onVisible);
     return () => {
@@ -64,67 +71,148 @@ export default function App() {
 
   const handleNameSubmit = (name) => {
     setClientName(name);
-    setStep(STEPS.IDENTIFY);
+    setStep(STEPS.BOOKING);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleIdentifyConfirm = (data) => {
-    setClient({ name: clientName, service: data.service });
-    setStep(STEPS.CALENDAR);
+  const refreshAvailability = async () => {
+    try {
+      const avail = await api.getAvailability();
+      setAvailableDates(avail.dates || []);
+      setAvailableSlots(avail.slots || {});
+      setSlotTemplate(avail.template || []);
+    } catch { /* The booking is already created; keep the successful response. */ }
   };
 
-  const handleSchedule = async ({ date, time, paymentMethod }) => {
-    if (!client) return;
+  const handleSchedule = async ({ service, date, time, paymentMethod }) => {
     const appointment = await api.createAppointment({
-      clientName: client.name,
-      serviceId: client.service.id,
+      clientName,
+      serviceId: service.id,
       date,
       time,
       paymentMethod,
     });
+    setClient({ name: clientName, service });
     if (appointment.paymentMethod === 'onsite') {
       setBooking({ date, time });
       setStep(STEPS.SUCCESS);
+      window.scrollTo({ top: 0, behavior: 'auto' });
     }
-    try {
-      const avail = await api.getAvailability();
-      setAvailableDates(avail.dates);
-      setAvailableSlots(avail.slots);
-    } catch { /* The booking is already created; keep the successful response. */ }
+    await refreshAvailability();
     return appointment;
   };
 
   const handlePaymentComplete = useCallback((appointment) => {
     setBooking({ date: appointment.date, time: appointment.time });
     setStep(STEPS.SUCCESS);
+    window.scrollTo({ top: 0, behavior: 'auto' });
   }, []);
 
   const handleReset = () => {
     setClient(null);
     setBooking(null);
     setStep(STEPS.LANDING);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     loadData();
   };
 
   if (loading) {
     return (
-      <section className="min-h-screen graffiti-wall flex items-center justify-center relative overflow-hidden">
-        <GraffitiWall />
-        <Loader2 className="w-8 h-8 text-white animate-spin relative z-10" />
+      <section className="ph-state-screen">
+        <div className="relative z-10 flex flex-col items-center gap-5 text-center">
+          <div className="ph-scissors-badge">
+            <Scissors className="h-10 w-10" />
+          </div>
+          <div className="flex items-center gap-3 text-[color:var(--muted)]">
+            <Loader2 className="ph-spinner text-[color:var(--red)]" />
+            <p className="font-display text-xl uppercase tracking-[.2em]">Preparando a cadeira</p>
+          </div>
+        </div>
       </section>
     );
   }
 
   if (error) {
     return (
-      <section className="min-h-screen graffiti-wall flex items-center justify-center px-6 relative overflow-hidden">
-        <GraffitiWall />
-        <div className="text-center space-y-3 relative z-10">
-          <div className="flex items-center justify-center gap-2">
-            <AlertCircle className="w-5 h-5 text-red-400" />
-            <p className="text-red-400 font-medium">{error}</p>
+      <section className="ph-state-screen">
+        <div className="ph-state-card">
+          <div className="ph-status-icon">
+            <AlertCircle className="h-8 w-8" />
           </div>
-          <button onClick={loadData} className="px-4 py-2.5 border-2 border-white text-white font-bold hover:bg-white hover:text-black transition">
+          <h1 className="text-display text-3xl text-white">Não foi possível carregar</h1>
+          <p className="mt-3 text-sm leading-relaxed text-[color:var(--muted)]">{error}</p>
+          <button type="button" onClick={() => loadData()} className="ph-btn-red mt-6 w-full py-3.5">
             Tentar novamente
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  if (step === STEPS.SUCCESS && client && booking) {
+    const dateLabel = new Date(`${booking.date}T00:00:00`).toLocaleDateString('pt-BR');
+    const weekdayRaw = new Date(`${booking.date}T00:00:00`).toLocaleDateString('pt-BR', { weekday: 'long' });
+    const weekday = weekdayRaw.charAt(0).toUpperCase() + weekdayRaw.slice(1);
+    const message = [
+      '*NOVO AGENDAMENTO - PH BARBEARIA*',
+      '',
+      `*Cliente:* ${client.name}`,
+      `*Data:* ${dateLabel} (${weekday})`,
+      `*Horário:* ${booking.time}`,
+      `*Serviço:* ${client.service.name}`,
+      `*Valor:* R$ ${formatPrice(client.service.price)}`,
+      `*Endereço:* ${BARBERSHOP_INFO.address}`,
+      '',
+      'Aguardo confirmação!',
+    ].join('\n');
+    const whatsappHref = `https://wa.me/${BARBERSHOP_INFO.whatsapp}?text=${encodeURIComponent(message)}`;
+
+    return (
+      <section className="ph-state-screen">
+        <div className="ph-state-card">
+          <div className="ph-status-icon success">
+            <CheckCircle2 className="h-10 w-10" />
+          </div>
+          <h1 className="text-display text-3xl uppercase text-white sm:text-4xl">
+            Agendamento confirmado
+          </h1>
+          <p className="mt-2 text-sm text-[color:var(--muted)]">
+            Tudo pronto, {client.name.split(' ')[0]}. Te esperamos na PH Barbearia.
+          </p>
+
+          <dl className="ph-summary mt-6 !border-[color:var(--border)] !bg-black/25 text-left">
+            <div className="ph-summary-row">
+              <dt>Cliente</dt>
+              <dd className="text-white">{client.name}</dd>
+            </div>
+            <div className="ph-summary-row">
+              <dt>Serviço</dt>
+              <dd className="text-white">{client.service.name}</dd>
+            </div>
+            <div className="ph-summary-row">
+              <dt>Data</dt>
+              <dd className="text-white">{dateLabel} · {weekday}</dd>
+            </div>
+            <div className="ph-summary-row">
+              <dt>Horário</dt>
+              <dd className="text-white">{booking.time}</dd>
+            </div>
+            <div className="ph-summary-row items-center">
+              <dt>Valor</dt>
+              <dd className="ph-summary-total">R$ {formatPrice(client.service.price)}</dd>
+            </div>
+          </dl>
+
+          <a
+            href={whatsappHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ph-btn-outline mt-4 w-full"
+          >
+            <MessageCircle className="h-5 w-5" /> Enviar no WhatsApp
+          </a>
+          <button type="button" onClick={handleReset} className="ph-btn-red mt-3 w-full py-3.5">
+            <Scissors className="h-5 w-5" /> Novo agendamento
           </button>
         </div>
       </section>
@@ -135,47 +223,20 @@ export default function App() {
     <>
       {step === STEPS.LANDING && <LandingPage onNameSubmit={handleNameSubmit} />}
 
-      {step === STEPS.IDENTIFY && (
-        <IdentificationForm
+      {step === STEPS.BOOKING && (
+        <BookingFlow
           services={services}
-          clientName={clientName}
-          onConfirm={handleIdentifyConfirm}
-          onBack={() => setStep(STEPS.LANDING)}
-        />
-      )}
-
-      {step === STEPS.CALENDAR && (
-        <CalendarSlots
           availableDates={availableDates}
           availableSlots={availableSlots}
-          client={client}
+          slotTemplate={slotTemplate}
+          clientName={clientName}
           onSchedule={handleSchedule}
           onPaymentComplete={handlePaymentComplete}
-          onBack={() => setStep(STEPS.IDENTIFY)}
+          onBack={() => {
+            setStep(STEPS.LANDING);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
         />
-      )}
-
-      {step === STEPS.SUCCESS && client && booking && (
-        <section className="min-h-screen graffiti-wall flex items-center justify-center px-6 py-12 text-white relative overflow-hidden">
-          <GraffitiWall />
-          <BarberIllustration className="absolute bottom-0 right-0 w-36 h-52 opacity-15 hidden lg:block" />
-          <div className="street-card max-w-md w-full border-2 p-6 sm:p-8 space-y-4 text-center relative z-10">
-            <CheckCircle2 className="w-12 h-12 mx-auto text-[#12cdb2]" />
-            <h2 className="font-display text-3xl sm:text-4xl text-white uppercase">
-              Agendamento confirmado
-            </h2>
-            <div className="text-zinc-300 space-y-1 text-sm">
-              <p><span className="text-white font-bold">Cliente:</span> {client.name}</p>
-              <p><span className="text-white font-bold">Serviço:</span> {client.service.name}</p>
-              <p><span className="text-white font-bold">Data:</span> {new Date(booking.date + 'T00:00:00').toLocaleDateString('pt-BR')}</p>
-              <p><span className="text-white font-bold">Horário:</span> {booking.time}</p>
-            </div>
-            <button onClick={handleReset}
-              className="street-button mt-4 w-full px-4 py-3 font-bold font-display uppercase border-2 transition">
-              Novo agendamento
-            </button>
-          </div>
-        </section>
       )}
     </>
   );

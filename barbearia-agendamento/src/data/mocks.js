@@ -1,44 +1,25 @@
-// Dados simulados (mocks) para a barbearia.
-// Em produção, estes dados viriam de uma API/back-end.
-
-export const SERVICES = [
-  { id: 'cut', name: 'Corte de Cabelo', duration: 30, price: 35 },
-  { id: 'beard', name: 'Barba', duration: 20, price: 25 },
-  { id: 'eyebrow', name: 'Sobrancelha', duration: 15, price: 15 },
-  { id: 'combo', name: 'Corte + Barba', duration: 50, price: 55 },
-];
-
-// Dias disponíveis (formato ISO YYYY-MM-DD) para o mês atual em diante.
-const today = new Date();
-export const AVAILABLE_DATES = Array.from({ length: 14 }, (_, i) => {
-  const d = new Date(today);
-  d.setDate(today.getDate() + i + 1);
-  // Evita domingos (0)
-  if (d.getDay() === 0) d.setDate(d.getDate() + 1);
-  return d.toISOString().split('T')[0];
-}).filter((v, i, a) => a.indexOf(v) === i);
-
-// Horários livres por dia (mock). Chave = data ISO, valor = array de horários.
-export const AVAILABLE_SLOTS = AVAILABLE_DATES.reduce((acc, date) => {
-  acc[date] = ['09:00', '09:30', '10:00', '10:30', '11:00', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00'];
-  return acc;
-}, {});
-
-export const PLANS = [
-  { id: 'corte', name: 'Plano Corte', description: '4 cortes de cabelo por mês', price: 120 },
-  { id: 'barba', name: 'Plano Barba', description: '4 barbas por mês', price: 80 },
-  { id: 'completo', name: 'Plano Completo', description: '4 cortes + barba por mês', price: 180 },
-];
+// Informações da barbearia usadas na landing page e nas telas de confirmação.
+// Os serviços, datas e horários vêm da API (barbearia-api).
 
 export const BARBERSHOP_INFO = {
-  name: 'Gui Cortes',
-  tagline: 'Seu estilo, nossa arte.',
-  welcome: 'Seja bem-vindo à Gui Cortes. Aqui, cada corte é feito com atenção aos detalhes para você sair com a confiança renovada.',
-  quote: 'Corte bom é aquele que combina com você.',
-  author: 'GUI',
-  address: 'AV. Exemplo, 123',
-  phone: '(00) 00000-0000',
-  whatsapp: '5500000000000',
-  instagram: 'https://www.instagram.com/seu_perfil/',
+  name: 'PH Barbearia',
+  wordmark: 'PH BARBEARIA',
+  nickname: 'PH do Corte',
+  tagline: 'Estilo • Precisão • Atitude',
+  welcome:
+    'Seja bem-vindo à PH Barbearia. Aqui, cada corte é uma obra de arte e cada cliente sai com a confiança renovada.',
+  quote: 'Onde o cuidado masculino é levado a sério.',
+  author: 'Pedro Henrique',
+  address: 'Av. Sabino Monte, 4306',
+  phone: '(85) 9203-7211',
+  whatsapp: '558592037211',
+  instagram: 'https://www.instagram.com/ophdocorte._/',
   hours: 'Seg a Sáb',
 };
+
+export const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+export const PAYMENT_METHODS = [
+  { id: 'onsite', label: 'Presencial', hint: 'Pagar na barbearia' },
+  { id: 'pix', label: 'PIX', hint: 'Pagar agora online' },
+];
