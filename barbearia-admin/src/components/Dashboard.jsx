@@ -1,6 +1,18 @@
 import { useState, useEffect } from 'react';
+import {
+  Ban,
+  Banknote,
+  CalendarDays,
+  CheckCircle2,
+  Clock3,
+  Hourglass,
+  Loader2,
+  LogOut,
+  Plus,
+  Save,
+  Trash2,
+} from 'lucide-react';
 import { api } from '../api/client';
-import { Loader2 } from 'lucide-react';
 
 const TABS = [
   { id: 'appointments', label: 'Agendamentos' },
@@ -9,11 +21,36 @@ const TABS = [
 ];
 
 const paymentLabel = (status) => ({
-  paid: 'Recebido', pending: 'Aguardando pagamento', failed: 'Falhou', expired: 'Expirado',
-  cancelled: 'Cancelado', refunded: 'Reembolsado', charged_back: 'Contestado',
-}[status] || 'Aguardando pagamento');
-const appointmentLabel = (status) => ({ pending_payment: 'Aguardando PIX', confirmed: 'Confirmado', cancelled: 'Cancelado', expired: 'Expirado' }[status] || 'Confirmado');
-const paymentTone = (status) => status === 'paid' ? 'text-[#12cdb2] border-[#12cdb2]' : status === 'pending' ? 'text-[#f3d64e] border-[#f3d64e]' : 'text-zinc-400 border-zinc-700';
+  paid: 'Recebido',
+  pending: 'Pendente',
+  failed: 'Falhou',
+  expired: 'Expirado',
+  cancelled: 'Cancelado',
+  refunded: 'Reembolsado',
+  charged_back: 'Contestado',
+}[status] || 'Pendente');
+
+const appointmentLabel = (status) => ({
+  pending_payment: 'Aguardando pagamento',
+  confirmed: 'Confirmado',
+  cancelled: 'Cancelado',
+  expired: 'Expirado',
+}[status] || 'Confirmado');
+
+const paymentTone = (status) => {
+  if (status === 'paid') return 'success';
+  if (status === 'pending') return 'warning';
+  return 'danger';
+};
+
+const formatMoney = (value) => `R$ ${Number(value || 0).toFixed(2).replace('.', ',')}`;
+const formatDate = (iso) => new Date(`${iso}T00:00:00`).toLocaleDateString('pt-BR');
+
+function todayISO() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
 export default function Dashboard({ onLogout }) {
   const [tab, setTab] = useState('appointments');
   const [appointments, setAppointments] = useState([]);
@@ -28,9 +65,9 @@ export default function Dashboard({ onLogout }) {
   const [lastSeenIds, setLastSeenIds] = useState(new Set());
 
   useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 3000);
-    return () => clearTimeout(t);
+    if (!toast) return undefined;
+    const timer = setTimeout(() => setToast(null), 3500);
+    return () => clearTimeout(timer);
   }, [toast]);
 
   const loadAll = async () => {
@@ -44,12 +81,12 @@ export default function Dashboard({ onLogout }) {
       ]);
       setAppointments(appts);
       setServices(svcs);
-      setAvailableDates(avail.dates);
-      setSlotTemplate(avail.template);
+      setAvailableDates(avail.dates || []);
+      setSlotTemplate(avail.template || []);
       setBlocked(avail.blocked || {});
       setLastSeenIds(new Set(appts.map((a) => a.id)));
     } catch (e) {
-      setMessage(e.message);
+      setMessage(e.message || 'Não foi possível carregar o painel.');
     } finally {
       setLoading(false);
     }
@@ -57,7 +94,6 @@ export default function Dashboard({ onLogout }) {
 
   useEffect(() => { loadAll(); }, []);
 
-  // Notificações automáticas: polling de novos agendamentos
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
@@ -68,15 +104,18 @@ export default function Dashboard({ onLogout }) {
           setLastSeenIds(new Set(appts.map((a) => a.id)));
         }
         setAppointments(appts);
-      } catch {}
+      } catch { /* mantém os dados atuais */ }
     }, 10000);
     return () => clearInterval(interval);
   }, [lastSeenIds]);
 
   const handleCancel = async (id) => {
+    if (typeof window !== 'undefined' && !window.confirm('Cancelar este agendamento? O horário será liberado.')) return;
     try {
       await api.deleteAppointment(id);
-      setAppointments((prev) => prev.map((a) => a.id === id ? { ...a, status: 'cancelled', paymentStatus: 'cancelled' } : a));
+      setAppointments((prev) => prev.map((a) => (
+        a.id === id ? { ...a, status: 'cancelled', paymentStatus: 'cancelled' } : a
+      )));
       setMessage('Agendamento cancelado.');
       setToast({ type: 'success', text: 'Agendamento cancelado.' });
     } catch (e) {
@@ -88,7 +127,9 @@ export default function Dashboard({ onLogout }) {
   const handleMarkPaymentReceived = async (id) => {
     try {
       const updated = await api.markPaymentReceived(id);
-      setAppointments((prev) => prev.map((appointment) => appointment.id === id ? updated : appointment));
+      setAppointments((prev) => prev.map((appointment) => (
+        appointment.id === id ? updated : appointment
+      )));
       setToast({ type: 'success', text: 'Pagamento marcado como recebido.' });
     } catch (e) {
       setMessage(e.message);
@@ -117,8 +158,8 @@ export default function Dashboard({ onLogout }) {
     setMessage('');
     try {
       const res = await api.putAvailability({ dates: availableDates, template: slotTemplate, blocked });
-      setAvailableDates(res.dates);
-      setSlotTemplate(res.template);
+      setAvailableDates(res.dates || []);
+      setSlotTemplate(res.template || []);
       setMessage('Disponibilidade salva.');
       setToast({ type: 'success', text: 'Disponibilidade salva com sucesso!' });
     } catch (e) {
@@ -130,12 +171,17 @@ export default function Dashboard({ onLogout }) {
   };
 
   const updateService = (id, field, value) => {
-    setServices((prev) => prev.map((s) =>
+    setServices((prev) => prev.map((s) => (
       s.id === id ? { ...s, [field]: field === 'name' ? value : Number(value) || 0 } : s
-    ));
+    )));
   };
 
-  const addService = () => setServices((prev) => [...prev, { id: crypto.randomUUID(), name: 'Novo serviço', duration: 30, price: 0 }]);
+  const addService = () => {
+    const id = typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `servico-${Date.now()}`;
+    setServices((prev) => [...prev, { id, name: 'Novo serviço', duration: 30, price: 0 }]);
+  };
   const removeService = (id) => setServices((prev) => prev.filter((s) => s.id !== id));
 
   const [newDate, setNewDate] = useState('');
@@ -146,13 +192,13 @@ export default function Dashboard({ onLogout }) {
     setAvailableDates((prev) => [...prev, newDate].sort());
     setNewDate('');
   };
-  const removeDate = (d) => setAvailableDates((prev) => prev.filter((x) => x !== d));
+  const removeDate = (date) => setAvailableDates((prev) => prev.filter((x) => x !== date));
   const addTime = () => {
     if (!newTime || slotTemplate.includes(newTime)) return;
     setSlotTemplate((prev) => [...prev, newTime].sort());
     setNewTime('');
   };
-  const removeTime = (t) => setSlotTemplate((prev) => prev.filter((x) => x !== t));
+  const removeTime = (time) => setSlotTemplate((prev) => prev.filter((x) => x !== time));
 
   const [blockDate, setBlockDate] = useState('');
   const [blockTime, setBlockTime] = useState('');
@@ -182,154 +228,293 @@ export default function Dashboard({ onLogout }) {
 
   if (loading) {
     return (
-      <section className="min-h-screen graffiti-wall flex items-center justify-center">
-        <p className="text-zinc-400 font-medium">Carregando...</p>
+      <section className="admin-shell flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <img src="/brand/gd-logo.jpg" alt="G dos Cortes" className="admin-logo" style={{ width: '5rem', height: '5rem' }} />
+          <div className="flex items-center gap-2 text-[color:var(--muted)]">
+            <Loader2 className="h-5 w-5 animate-spin text-[color:var(--brand-bright)]" />
+            <span className="admin-kicker">Carregando painel</span>
+          </div>
+        </div>
       </section>
     );
   }
 
+  const todayStr = todayISO();
+  const todayAppts = appointments
+    .filter((a) => a.date === todayStr && !['cancelled', 'expired'].includes(a.status))
+    .sort((a, b) => a.time.localeCompare(b.time));
+  const revenue = todayAppts
+    .filter((a) => a.paymentStatus === 'paid')
+    .reduce((sum, a) => sum + (Number(a.service?.price) || 0), 0);
+  const pendingPayments = appointments
+    .filter((a) => a.paymentStatus === 'pending' && !['cancelled', 'expired'].includes(a.status))
+    .length;
+  const next = todayAppts[0];
+
   return (
-    <section className="min-h-screen graffiti-wall px-6 py-12">
-      <div className="max-w-5xl mx-auto space-y-6">
-        <header className="flex items-center justify-between">
-          <div>
-            <h2 className="font-display text-3xl text-white">Painel do Barbeiro</h2>
-            <p className="text-zinc-400 text-sm">Gerencie agendamentos, serviços e disponibilidade.</p>
+    <section className="admin-shell">
+      <div className="admin-container space-y-6">
+        <header className="admin-header flex-wrap">
+          <div className="flex items-center gap-3">
+            <img src="/brand/gd-logo.jpg" alt="Logo G dos Cortes" className="admin-logo" />
+            <div>
+              <span className="admin-kicker">G dos Cortes • Painel</span>
+              <h1 className="font-display text-3xl leading-none text-white sm:text-4xl">Painel do Barbeiro</h1>
+              <p className="mt-1 text-sm text-[color:var(--muted)]">
+                Agendamentos, serviços e disponibilidade.
+              </p>
+            </div>
           </div>
-          <button onClick={() => { api.logout(); onLogout(); }}
-            className="px-4 py-2 border-2 border-zinc-700 text-white font-bold font-display hover:bg-zinc-900 transition">
-            Sair
+          <button
+            type="button"
+            onClick={() => { api.logout(); onLogout(); }}
+            className="admin-btn-ghost"
+          >
+            <LogOut className="h-4 w-4" /> Sair
           </button>
         </header>
 
-        <p className="text-xs text-zinc-500">As alterações só são aplicadas após clicar em "Salvar".</p>
-        {message && <p className="text-sm text-zinc-300">{message}</p>}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-[color:var(--muted)]">
+            As alterações só são aplicadas após clicar em &quot;Salvar&quot;.
+          </p>
+          <p className="text-[0.68rem] uppercase tracking-[.14em] text-[color:var(--muted)]">
+            Quinta, sábado e domingo • 08h às 18h
+          </p>
+        </div>
 
-        {/* Painel do dia */}
-        {(() => {
-          const todayStr = new Date().toISOString().split('T')[0];
-          const todayAppts = appointments
-            .filter((a) => a.date === todayStr && !['cancelled', 'expired'].includes(a.status))
-            .sort((a, b) => a.time.localeCompare(b.time));
-          const revenue = todayAppts.filter((a) => a.paymentStatus === 'paid').reduce((sum, a) => sum + (Number(a.service?.price) || 0), 0);
-          const pendingPayments = appointments.filter((a) => a.paymentStatus === 'pending' && !['cancelled', 'expired'].includes(a.status)).length;
-          const next = todayAppts[0];
-          return (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <div className="border-2 border-zinc-800 bg-black/60 p-4">
-                <p className="text-xs font-display uppercase text-zinc-400">Agendamentos hoje</p>
-                <p className="text-2xl font-bold text-white mt-1">{todayAppts.length}</p>
+        {message && (
+          <div className="admin-card text-sm text-[color:var(--muted)]" role="status">{message}</div>
+        )}
+
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="admin-card">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="admin-stat-label">Agendamentos hoje</p>
+                <p className="admin-stat-value">{todayAppts.length}</p>
               </div>
-              <div className="border-2 border-zinc-800 bg-black/60 p-4">
-                <p className="text-xs font-display uppercase text-zinc-400">Aguardando pagamento</p>
-                <p className="text-2xl font-bold text-[#f3d64e] mt-1">{pendingPayments}</p>
+              <CalendarDays className="h-4 w-4 text-[color:var(--brand-bright)]" />
+            </div>
+          </div>
+          <div className="admin-card">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="admin-stat-label">Aguardando pagamento</p>
+                <p className="admin-stat-value text-[color:var(--warning)]">{pendingPayments}</p>
               </div>
-              <div className="border-2 border-zinc-800 bg-black/60 p-4">
-                <p className="text-xs font-display uppercase text-zinc-400">Recebido hoje</p>
-                <p className="text-2xl font-bold text-white mt-1">R$ {revenue.toFixed(2).replace('.', ',')}</p>
+              <Hourglass className="h-4 w-4 text-[color:var(--warning)]" />
+            </div>
+          </div>
+          <div className="admin-card">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="admin-stat-label">Recebido hoje</p>
+                <p className="admin-stat-value">{formatMoney(revenue)}</p>
               </div>
-              <div className="border-2 border-zinc-800 bg-black/60 p-4">
-                <p className="text-xs font-display uppercase text-zinc-400">Próximo</p>
-                <p className="text-lg font-bold text-white mt-1">
+              <Banknote className="h-4 w-4 text-[color:var(--success)]" />
+            </div>
+          </div>
+          <div className="admin-card">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="admin-stat-label">Próximo</p>
+                <p className="mt-1 font-heading text-base leading-tight text-white">
                   {next ? `${next.time} — ${next.clientName}` : 'Nenhum'}
                 </p>
               </div>
+              <Clock3 className="h-4 w-4 text-[color:var(--brand-bright)]" />
             </div>
-          );
-        })()}
+          </div>
+        </div>
 
-        <div className="flex gap-2 border-b border-zinc-800">
-          {TABS.map((t) => (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              className={[
-                'px-4 py-2 text-sm font-bold font-display border-b-2 transition',
-                tab === t.id ? 'border-white text-white' : 'border-transparent text-zinc-500 hover:text-zinc-300',
-              ].join(' ')}>
-              {t.label}
+        <div className="admin-tabs" role="tablist" aria-label="Seções do painel">
+          {TABS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              aria-selected={tab === item.id}
+              onClick={() => setTab(item.id)}
+              className={`admin-tab ${tab === item.id ? 'active' : ''}`}
+            >
+              {item.label}
             </button>
           ))}
         </div>
 
-        <div className="border-2 border-zinc-800 bg-black/60 p-6 space-y-4">
+        <div className="admin-panel">
           {tab === 'appointments' && (
             appointments.length === 0 ? (
-              <p className="text-zinc-500 text-sm">Nenhum agendamento registrado.</p>
+              <p className="admin-empty">Nenhum agendamento registrado.</p>
             ) : (
               <>
                 <div className="space-y-3 md:hidden">
                   {appointments.map((appointment) => (
-                    <article key={appointment.id} className="border-2 border-zinc-800 bg-black/50 p-4 space-y-3">
+                    <article key={appointment.id} className="admin-row space-y-3">
                       <div className="flex items-start justify-between gap-3">
-                        <div><h3 className="font-bold text-white">{appointment.clientName}</h3><p className="text-sm text-zinc-400">{appointment.service?.name}</p></div>
-                        <span className="text-xs text-[#f3d64e]">R$ {Number(appointment.service?.price || 0).toFixed(2).replace('.', ',')}</span>
+                        <div>
+                          <h3 className="font-heading text-base text-white">{appointment.clientName}</h3>
+                          <p className="text-xs text-[color:var(--muted)]">{appointment.service?.name}</p>
+                        </div>
+                        <span className="font-display text-xl text-[color:var(--brand-bright)]">
+                          {formatMoney(appointment.service?.price)}
+                        </span>
                       </div>
-                      <div className="flex flex-wrap gap-2 text-xs">
-                        <span className="px-2 py-1 border border-zinc-700 text-zinc-300">{new Date(appointment.date + 'T00:00:00').toLocaleDateString('pt-BR')} · {appointment.time}</span>
-                        <span className="px-2 py-1 border border-zinc-700 text-zinc-300">{appointment.paymentMethod === 'pix' ? 'PIX' : 'Presencial'}</span>
-                        <span className={`px-2 py-1 border ${paymentTone(appointment.paymentStatus)}`}>{paymentLabel(appointment.paymentStatus)}</span>
-                        <span className="px-2 py-1 border border-zinc-700 text-zinc-400">{appointmentLabel(appointment.status)}</span>
+                      <div className="flex flex-wrap gap-2">
+                        <span className="admin-tag">{formatDate(appointment.date)} · {appointment.time}</span>
+                        <span className="admin-tag brand">{appointment.paymentMethod === 'pix' ? 'PIX' : 'Presencial'}</span>
+                        <span className={`admin-tag ${paymentTone(appointment.paymentStatus)}`}>
+                          {paymentLabel(appointment.paymentStatus)}
+                        </span>
+                        <span className="admin-tag">{appointmentLabel(appointment.status)}</span>
                       </div>
-                      {appointment.paymentMethod === 'onsite' && appointment.paymentStatus === 'pending' && appointment.status === 'confirmed' && <button onClick={() => handleMarkPaymentReceived(appointment.id)} className="w-full px-3 py-2 border-2 border-[#12cdb2] text-[#12cdb2] font-bold">Marcar como recebido</button>}
-                      {appointment.paymentStatus !== 'paid' && !(appointment.paymentMethod === 'pix' && appointment.status === 'pending_payment') && !['cancelled', 'expired'].includes(appointment.status) && <button onClick={() => handleCancel(appointment.id)} className="w-full px-3 py-2 border-2 border-red-500 text-red-400 font-bold">Cancelar agendamento</button>}
+                      <div className="flex flex-wrap gap-2">
+                        {appointment.paymentMethod === 'onsite' && appointment.paymentStatus === 'pending' && appointment.status === 'confirmed' && (
+                          <button
+                            type="button"
+                            onClick={() => handleMarkPaymentReceived(appointment.id)}
+                            className="admin-btn-success admin-btn-sm"
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5" /> Marcar como recebido
+                          </button>
+                        )}
+                        {appointment.paymentStatus !== 'paid'
+                          && !(appointment.paymentMethod === 'pix' && appointment.status === 'pending_payment')
+                          && !['cancelled', 'expired'].includes(appointment.status) && (
+                            <button
+                              type="button"
+                              onClick={() => handleCancel(appointment.id)}
+                              className="admin-btn-danger admin-btn-sm"
+                            >
+                              <Ban className="h-3.5 w-3.5" /> Cancelar
+                            </button>
+                          )}
+                      </div>
                     </article>
                   ))}
                 </div>
-                <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead><tr className="text-left text-zinc-500 border-b border-zinc-800">
-                      <th className="py-2 pr-4 font-display">Cliente</th><th className="py-2 pr-4 font-display">Servico</th><th className="py-2 pr-4 font-display">Data</th><th className="py-2 pr-4 font-display">Horario</th><th className="py-2 pr-4 font-display">Pagamento</th><th className="py-2 pr-4 font-display">Status</th><th className="py-2 pr-4 font-display">Acoes</th>
-                    </tr></thead>
-                    <tbody>{appointments.map((appointment) => (
-                      <tr key={appointment.id} className="border-b border-zinc-800">
-                        <td className="py-3 pr-4 text-white">{appointment.clientName}</td><td className="py-3 pr-4 text-zinc-300">{appointment.service?.name}</td><td className="py-3 pr-4 text-zinc-300">{new Date(appointment.date + 'T00:00:00').toLocaleDateString('pt-BR')}</td><td className="py-3 pr-4 text-zinc-300">{appointment.time}</td>
-                        <td className="py-3 pr-4"><span className="text-zinc-300">{appointment.paymentMethod === 'pix' ? 'PIX' : 'Presencial'}</span><span className={`block text-xs ${paymentTone(appointment.paymentStatus).split(' ')[0]}`}>{paymentLabel(appointment.paymentStatus)}</span></td><td className="py-3 pr-4 text-zinc-300">{appointmentLabel(appointment.status)}</td>
-                        <td className="py-3 pr-4 whitespace-nowrap">{appointment.paymentMethod === 'onsite' && appointment.paymentStatus === 'pending' && appointment.status === 'confirmed' && <button onClick={() => handleMarkPaymentReceived(appointment.id)} className="mr-2 px-2 py-1 border border-[#12cdb2] text-[#12cdb2] font-bold">Recebido</button>}{appointment.paymentStatus !== 'paid' && !(appointment.paymentMethod === 'pix' && appointment.status === 'pending_payment') && !['cancelled', 'expired'].includes(appointment.status) && <button onClick={() => handleCancel(appointment.id)} className="px-2 py-1 border border-red-500 text-red-400 font-bold">Cancelar</button>}</td>
+
+                <div className="hidden overflow-x-auto md:block">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Cliente</th>
+                        <th>Serviço</th>
+                        <th>Data</th>
+                        <th>Horário</th>
+                        <th>Pagamento</th>
+                        <th>Status</th>
+                        <th>Ações</th>
                       </tr>
-                    ))}</tbody>
+                    </thead>
+                    <tbody>
+                      {appointments.map((appointment) => (
+                        <tr key={appointment.id}>
+                          <td className="font-medium text-white">{appointment.clientName}</td>
+                          <td>{appointment.service?.name}</td>
+                          <td>{formatDate(appointment.date)}</td>
+                          <td>{appointment.time}</td>
+                          <td>
+                            <span className="block text-sm">
+                              {appointment.paymentMethod === 'pix' ? 'PIX' : 'Presencial'}
+                            </span>
+                            <span className={`admin-tag mt-1 ${paymentTone(appointment.paymentStatus)}`}>
+                              {paymentLabel(appointment.paymentStatus)}
+                            </span>
+                          </td>
+                          <td>{appointmentLabel(appointment.status)}</td>
+                          <td>
+                            <div className="flex flex-wrap gap-1.5">
+                              {appointment.paymentMethod === 'onsite' && appointment.paymentStatus === 'pending' && appointment.status === 'confirmed' && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleMarkPaymentReceived(appointment.id)}
+                                  className="admin-btn-success admin-btn-sm"
+                                >
+                                  Recebido
+                                </button>
+                              )}
+                              {appointment.paymentStatus !== 'paid'
+                                && !(appointment.paymentMethod === 'pix' && appointment.status === 'pending_payment')
+                                && !['cancelled', 'expired'].includes(appointment.status) && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleCancel(appointment.id)}
+                                    className="admin-btn-danger admin-btn-sm"
+                                  >
+                                    Cancelar
+                                  </button>
+                                )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
                   </table>
                 </div>
               </>
             )
           )}
+
           {tab === 'services' && (
             <div className="space-y-4">
               <div className="flex justify-end">
-                <button onClick={addService}
-                  className="px-4 py-2 bg-white text-black font-bold font-display border-2 border-white hover:bg-black hover:text-white transition">
-                  + Adicionar serviço
+                <button type="button" onClick={addService} className="admin-btn">
+                  <Plus className="h-4 w-4" /> Adicionar serviço
                 </button>
               </div>
               <div className="space-y-3">
-                {services.map((s) => (
-                  <div key={s.id} className="grid grid-cols-1 sm:grid-cols-4 gap-2 items-end border-2 border-zinc-800 p-3">
+                {services.map((service) => (
+                  <div key={service.id} className="admin-row grid grid-cols-1 gap-3 sm:grid-cols-[1fr_7rem_7rem_auto] sm:items-end">
                     <div>
-                      <label className="block text-xs font-medium text-zinc-400 mb-1">Nome</label>
-                      <input value={s.name} onChange={(e) => updateService(s.id, 'name', e.target.value)}
-                        className="w-full px-3 py-2 border-2 border-zinc-700 bg-black text-white text-sm focus:outline-none focus:border-white transition" />
+                      <label className="admin-label" htmlFor={`name-${service.id}`}>Nome</label>
+                      <input
+                        id={`name-${service.id}`}
+                        value={service.name}
+                        onChange={(e) => updateService(service.id, 'name', e.target.value)}
+                        className="admin-input"
+                      />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-zinc-400 mb-1">Duração (min)</label>
-                      <input type="number" value={s.duration} onChange={(e) => updateService(s.id, 'duration', e.target.value)}
-                        className="w-full px-3 py-2 border-2 border-zinc-700 bg-black text-white text-sm focus:outline-none focus:border-white transition" />
+                      <label className="admin-label" htmlFor={`duration-${service.id}`}>Duração (min)</label>
+                      <input
+                        id={`duration-${service.id}`}
+                        type="number"
+                        value={service.duration}
+                        onChange={(e) => updateService(service.id, 'duration', e.target.value)}
+                        className="admin-input"
+                      />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-zinc-400 mb-1">Preço (R$)</label>
-                      <input type="number" value={s.price} onChange={(e) => updateService(s.id, 'price', e.target.value)}
-                        className="w-full px-3 py-2 border-2 border-zinc-700 bg-black text-white text-sm focus:outline-none focus:border-white transition" />
+                      <label className="admin-label" htmlFor={`price-${service.id}`}>Preço (R$)</label>
+                      <input
+                        id={`price-${service.id}`}
+                        type="number"
+                        value={service.price}
+                        onChange={(e) => updateService(service.id, 'price', e.target.value)}
+                        className="admin-input"
+                      />
                     </div>
-                    <div>
-                      <button onClick={() => removeService(s.id)}
-                        className="w-full px-3 py-2 border-2 border-red-500 text-red-400 font-bold font-display hover:bg-red-500 hover:text-white transition">
-                        Remover
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeService(service.id)}
+                      className="admin-btn-danger"
+                      aria-label={`Remover ${service.name}`}
+                    >
+                      <Trash2 className="h-4 w-4" /> Remover
+                    </button>
                   </div>
                 ))}
               </div>
               <div className="flex justify-end">
-                <button onClick={handleSaveServices} disabled={saving}
-                  className="px-4 py-2 bg-white text-black font-bold font-display border-2 border-white hover:bg-black hover:text-white disabled:bg-zinc-800 disabled:text-zinc-500 transition">
-                  {saving ? <span className="inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Salvando...</span> : 'Salvar serviços'}
+                <button type="button" onClick={handleSaveServices} disabled={saving} className="admin-btn">
+                  {saving ? (
+                    <><Loader2 className="h-4 w-4 animate-spin" /> Salvando...</>
+                  ) : (
+                    <><Save className="h-4 w-4" /> Salvar serviços</>
+                  )}
                 </button>
               </div>
             </div>
@@ -337,92 +522,127 @@ export default function Dashboard({ onLogout }) {
 
           {tab === 'availability' && (
             <div className="space-y-6">
-              <div className="space-y-2">
-                <h3 className="font-display text-lg text-white">Horários padrão</h3>
-                <div className="flex gap-2">
-                  <input type="time" value={newTime} onChange={(e) => setNewTime(e.target.value)}
-                    className="px-3 py-2 border-2 border-zinc-700 bg-black text-white text-sm focus:outline-none focus:border-white transition" />
-                  <button onClick={addTime}
-                    className="px-4 py-2 bg-white text-black font-bold font-display border-2 border-white hover:bg-black hover:text-white transition">
-                    Adicionar
+              <div className="space-y-3">
+                <h3 className="font-display text-xl text-white">Horários padrão</h3>
+                <div className="flex flex-wrap gap-2">
+                  <input
+                    type="time"
+                    value={newTime}
+                    onChange={(e) => setNewTime(e.target.value)}
+                    className="admin-input max-w-[10rem]"
+                    aria-label="Novo horário padrão"
+                  />
+                  <button type="button" onClick={addTime} className="admin-btn">
+                    <Plus className="h-4 w-4" /> Adicionar
                   </button>
                 </div>
-                <div className="flex flex-wrap gap-2 pt-2">
-                  {slotTemplate.map((t) => (
-                    <span key={t} className="inline-flex items-center gap-1 px-3 py-1 border-2 border-zinc-700 text-zinc-200 text-sm">
-                      {t}
-                      <button onClick={() => removeTime(t)} className="text-zinc-400 hover:text-red-400 font-bold">×</button>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {slotTemplate.map((time) => (
+                    <span key={time} className="admin-tag brand">
+                      {time}
+                      <button
+                        type="button"
+                        onClick={() => removeTime(time)}
+                        className="ml-1 text-[color:var(--brand-bright)] hover:text-white"
+                        aria-label={`Remover horário ${time}`}
+                      >
+                        ×
+                      </button>
                     </span>
                   ))}
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <h3 className="font-display text-lg text-white">Dias disponíveis</h3>
-                <div className="flex gap-2">
-                  <input type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)}
-                    className="px-3 py-2 border-2 border-zinc-700 bg-black text-white text-sm focus:outline-none focus:border-white transition" />
-                  <button onClick={addDate}
-                    className="px-4 py-2 bg-white text-black font-bold font-display border-2 border-white hover:bg-black hover:text-white transition">
-                    Adicionar
+              <div className="space-y-3 border-t border-[color:var(--border)] pt-5">
+                <h3 className="font-display text-xl text-white">Dias disponíveis</h3>
+                <div className="flex flex-wrap gap-2">
+                  <input
+                    type="date"
+                    value={newDate}
+                    onChange={(e) => setNewDate(e.target.value)}
+                    className="admin-input max-w-[12rem]"
+                    aria-label="Novo dia disponível"
+                  />
+                  <button type="button" onClick={addDate} className="admin-btn">
+                    <Plus className="h-4 w-4" /> Adicionar
                   </button>
                 </div>
-                <div className="flex flex-wrap gap-2 pt-2">
-                  {availableDates.map((d) => (
-                    <span key={d} className="inline-flex items-center gap-1 px-3 py-1 border-2 border-zinc-700 text-zinc-200 text-sm">
-                      {new Date(d + 'T00:00:00').toLocaleDateString('pt-BR')}
-                      <button onClick={() => removeDate(d)} className="text-zinc-400 hover:text-red-400 font-bold">×</button>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {availableDates.map((date) => (
+                    <span key={date} className="admin-tag brand">
+                      {formatDate(date)}
+                      <button
+                        type="button"
+                        onClick={() => removeDate(date)}
+                        className="ml-1 text-[color:var(--brand-bright)] hover:text-white"
+                        aria-label={`Remover dia ${formatDate(date)}`}
+                      >
+                        ×
+                      </button>
                     </span>
                   ))}
                 </div>
               </div>
 
-              <div className="space-y-2 border-t border-zinc-800 pt-4">
-                <h3 className="font-display text-lg text-white">Bloquear horário específico</h3>
-                <div className="flex gap-2 flex-wrap">
-                  <input type="date" value={blockDate} onChange={(e) => setBlockDate(e.target.value)}
-                    className="px-3 py-2 border-2 border-zinc-700 bg-black text-white text-sm focus:outline-none focus:border-white transition" />
-                  <select value={blockTime} onChange={(e) => setBlockTime(e.target.value)}
-                    className="px-3 py-2 border-2 border-zinc-700 bg-black text-white text-sm focus:outline-none focus:border-white transition">
+              <div className="space-y-3 border-t border-[color:var(--border)] pt-5">
+                <h3 className="font-display text-xl text-white">Bloquear horário específico</h3>
+                <div className="flex flex-wrap gap-2">
+                  <input
+                    type="date"
+                    value={blockDate}
+                    onChange={(e) => setBlockDate(e.target.value)}
+                    className="admin-input max-w-[12rem]"
+                    aria-label="Data do bloqueio"
+                  />
+                  <select
+                    value={blockTime}
+                    onChange={(e) => setBlockTime(e.target.value)}
+                    className="admin-select max-w-[10rem]"
+                    aria-label="Horário do bloqueio"
+                  >
                     <option value="">Horário</option>
-                    {slotTemplate.map((t) => <option key={t} value={t}>{t}</option>)}
+                    {slotTemplate.map((time) => <option key={time} value={time}>{time}</option>)}
                   </select>
-                  <button onClick={blockSlot}
-                    className="px-4 py-2 bg-white text-black font-bold font-display border-2 border-white hover:bg-black hover:text-white transition">
-                    Bloquear
+                  <button type="button" onClick={blockSlot} className="admin-btn">
+                    <Ban className="h-4 w-4" /> Bloquear
                   </button>
                 </div>
                 {Object.keys(blocked).length > 0 && (
-                  <div className="flex flex-wrap gap-2 pt-2">
-                    {Object.entries(blocked).map(([date, times]) =>
-                      times.map((t) => (
-                        <span key={date + t} className="inline-flex items-center gap-1 px-3 py-1 border-2 border-red-500 text-red-400 text-sm">
-                          {new Date(date + 'T00:00:00').toLocaleDateString('pt-BR')} {t}
-                          <button onClick={() => unblockSlot(date, t)} className="text-red-400 hover:text-white font-bold">×</button>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {Object.entries(blocked).map(([date, times]) => (
+                      times.map((time) => (
+                        <span key={date + time} className="admin-tag danger">
+                          {formatDate(date)} {time}
+                          <button
+                            type="button"
+                            onClick={() => unblockSlot(date, time)}
+                            className="ml-1 text-[color:var(--danger)] hover:text-white"
+                            aria-label={`Desbloquear ${formatDate(date)} ${time}`}
+                          >
+                            ×
+                          </button>
                         </span>
                       ))
-                    )}
+                    ))}
                   </div>
                 )}
               </div>
 
               <div className="flex justify-end">
-                <button onClick={handleSaveAvailability} disabled={saving}
-                  className="px-4 py-2 bg-white text-black font-bold font-display border-2 border-white hover:bg-black hover:text-white disabled:bg-zinc-800 disabled:text-zinc-500 transition">
-                  {saving ? <span className="inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Salvando...</span> : 'Salvar disponibilidade'}
+                <button type="button" onClick={handleSaveAvailability} disabled={saving} className="admin-btn">
+                  {saving ? (
+                    <><Loader2 className="h-4 w-4 animate-spin" /> Salvando...</>
+                  ) : (
+                    <><Save className="h-4 w-4" /> Salvar disponibilidade</>
+                  )}
                 </button>
               </div>
             </div>
           )}
         </div>
 
-        {/* Toast */}
         {toast && (
-          <div className={`fixed bottom-6 right-6 px-4 py-3 border-2 font-bold font-display text-sm shadow-lg transition-all ${
-            toast.type === 'success'
-              ? 'bg-white text-black border-white'
-              : 'bg-red-600 text-white border-red-600'
-          }`}>
+          <div className={`admin-toast ${toast.type === 'success' ? 'success' : 'error'}`} role="status">
             {toast.text}
           </div>
         )}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { AlertCircle, CheckCircle2, Loader2, Scissors } from 'lucide-react';
 import LandingPage from './components/LandingPage';
 import BookingFlow from './components/BookingFlow';
@@ -85,29 +85,27 @@ export default function App() {
     } catch { /* The booking is already created; keep the successful response. */ }
   };
 
-  const handleSchedule = async ({ service, date, time, paymentMethod }) => {
-    const appointment = await api.createAppointment({
-      clientName,
-      serviceId: service.id,
-      date,
-      time,
-      paymentMethod,
-    });
-    setClient({ name: clientName, service });
-    if (appointment.paymentMethod === 'onsite') {
-      setBooking({ date, time });
+  const handleSchedule = async ({ service, date, time, paymentMethod, requestId }) => {
+    try {
+      const appointment = await api.createAppointment({
+        clientName,
+        serviceId: service.id,
+        date,
+        time,
+        paymentMethod,
+        requestId,
+      });
+      setClient({ name: clientName, service });
+      setBooking({ date: appointment.date, time: appointment.time });
       setStep(STEPS.SUCCESS);
       window.scrollTo({ top: 0, behavior: 'auto' });
+      await refreshAvailability();
+      return appointment;
+    } catch (e) {
+      await refreshAvailability();
+      throw e;
     }
-    await refreshAvailability();
-    return appointment;
   };
-
-  const handlePaymentComplete = useCallback((appointment) => {
-    setBooking({ date: appointment.date, time: appointment.time });
-    setStep(STEPS.SUCCESS);
-    window.scrollTo({ top: 0, behavior: 'auto' });
-  }, []);
 
   const handleReset = () => {
     setClient(null);
@@ -232,7 +230,6 @@ export default function App() {
           slotTemplate={slotTemplate}
           clientName={clientName}
           onSchedule={handleSchedule}
-          onPaymentComplete={handlePaymentComplete}
           onBack={() => {
             setStep(STEPS.LANDING);
             window.scrollTo({ top: 0, behavior: 'smooth' });

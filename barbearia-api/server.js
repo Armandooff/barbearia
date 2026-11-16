@@ -241,7 +241,7 @@ app.use(async (req, res, next) => {
             res.statusCode = 503;
             res.removeHeader('Content-Length');
             res.setHeader('Content-Type', 'application/json; charset=utf-8');
-            args = [JSON.stringify({ error: 'Could not save appointment data. Please retry.' })];
+            args = [JSON.stringify({ error: 'Não foi possível salvar o agendamento. Tente novamente.' })];
           } finally {
             client.release();
           }
@@ -264,12 +264,12 @@ const adminHash = bcrypt.hashSync(ADMIN_PASSWORD, 10);
 function authMiddleware(req, res, next) {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
-  if (!token) return res.status(401).json({ error: 'Missing token' });
+  if (!token) return res.status(401).json({ error: 'Sessão expirada. Entre novamente.' });
   try {
     req.user = jwt.verify(token, JWT_SECRET);
     next();
   } catch {
-    return res.status(401).json({ error: 'Invalid token' });
+    return res.status(401).json({ error: 'Sessão inválida. Entre novamente.' });
   }
 }
 
@@ -329,17 +329,27 @@ app.get('/api/availability', async (req, res) => {
 
 app.post('/api/appointments', async (req, res) => {
   await expirePendingPayments();
-  const { clientName, serviceId, date, time, paymentMethod } = req.body || {};
-  if (!clientName || !serviceId || !date || !time || !['pix', 'onsite'].includes(paymentMethod)) {
-    return res.status(400).json({ error: 'Incomplete appointment details' });
+  const { clientName, serviceId, date, time, paymentMethod, requestId } = req.body || {};
+  const normalizedRequestId = typeof requestId === 'string' && requestId.length <= 120 ? requestId : null;
+
+  // Repetição segura da mesma solicitação (evita duplicar ao tentar novamente).
+  if (normalizedRequestId) {
+    const existing = state.appointments.find((item) => item.requestId === normalizedRequestId);
+    if (existing) return res.status(200).json(existing);
   }
-  const service = state.services.find((item) => item.id === serviceId);
-  if (!service) return res.status(400).json({ error: 'Invalid service' });
+
+  if (!clientName || !serviceId || !date || !time || !['pix', 'onsite'].includes(paymentMethod)) {
+    return res.status(400).json({ error: 'Dados do agendamento incompletos.' });
+  }
+  const legacyServiceIds = { cut: 'degrade', beard: 'barba', eyebrow: 'sobrancelha', combo: 'corte-barba' };
+  const normalizedServiceId = legacyServiceIds[serviceId] || serviceId;
+  const service = state.services.find((item) => item.id === normalizedServiceId);
+  if (!service) return res.status(400).json({ error: 'Serviço inválido. Atualize a página e escolha novamente.' });
   if (!state.availableDates.includes(date) || !(state.availableSlots[date] || []).includes(time)) {
-    return res.status(409).json({ error: 'This time is no longer available. Please choose another.' });
+    return res.status(409).json({ error: 'Este horário não está mais disponível. Escolha outro.' });
   }
   if (paymentMethod === 'pix' && (!MP_ACCESS_TOKEN || !MP_EXTERNAL_POS_ID)) {
-    return res.status(503).json({ error: 'Online PIX is not configured. Set the Mercado Pago access token and POS ID, or choose payment in person.' });
+    return res.status(503).json({ error: 'O pagamento online por PIX não está disponível. Escolha pagar presencialmente.' });
   }
 
   const id = crypto.randomUUID();
@@ -347,6 +357,7 @@ app.post('/api/appointments', async (req, res) => {
   const appointment = {
     id, clientName: String(clientName).trim(), service, date, time,
     paymentMethod,
+    requestId: normalizedRequestId,
     paymentStatus: 'pending',
     status: paymentMethod === 'pix' ? 'pending_payment' : 'confirmed',
     createdAt: now.toISOString(),
@@ -396,7 +407,7 @@ app.post('/api/appointments', async (req, res) => {
 app.get('/api/appointments/:id/payment-status', async (req, res) => {
   await expirePendingPayments();
   const appointment = state.appointments.find((item) => item.id === req.params.id);
-  if (!appointment) return res.status(404).json({ error: 'Appointment not found' });
+  if (!appointment) return res.status(404).json({ error: 'Agendamento não encontrado.' });
   if (appointment.paymentMethod === 'pix' && appointment.providerOrderId && MP_ACCESS_TOKEN && appointment.status === 'pending_payment') {
     try {
       const order = await getMercadoPagoOrder(appointment.providerOrderId);
@@ -409,8 +420,8 @@ app.get('/api/appointments/:id/payment-status', async (req, res) => {
 });
 
 app.post('/api/payments/webhook', async (req, res) => {
-  if (!MP_WEBHOOK_SECRET) return res.status(503).json({ error: 'Webhook secret is not configured' });
-  if (!validateWebhookSignature(req)) return res.status(401).json({ error: 'Invalid webhook signature' });
+  if (!MP_WEBHOOK_SECRET) return res.status(503).json({ error: 'Webhook do PIX não configurado.' });
+  if (!validateWebhookSignature(req)) return res.status(401).json({ error: 'Assinatura do webhook inválida.' });
   const orderId = req.query['data.id'] || req.body?.data?.id;
   if (!orderId || !MP_ACCESS_TOKEN) return res.sendStatus(200);
   try {
@@ -427,7 +438,7 @@ app.post('/api/payments/webhook', async (req, res) => {
 app.post('/api/auth/login', async (req, res) => {
   const { password } = req.body || {};
   const ok = await bcrypt.compare(password || '', adminHash);
-  if (!ok) return res.status(401).json({ error: 'Incorrect password' });
+  if (!ok) return res.status(401).json({ error: 'Senha incorreta.' });
   const token = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '8h' });
   res.json({ token });
 });
@@ -439,9 +450,9 @@ app.get('/api/appointments', authMiddleware, async (req, res) => {
 
 app.patch('/api/appointments/:id/payment', authMiddleware, async (req, res) => {
   const appointment = state.appointments.find((item) => item.id === req.params.id);
-  if (!appointment) return res.status(404).json({ error: 'Appointment not found' });
+  if (!appointment) return res.status(404).json({ error: 'Agendamento não encontrado.' });
   if (appointment.paymentMethod !== 'onsite' || appointment.paymentStatus !== 'pending' || !isActive(appointment)) {
-    return res.status(409).json({ error: 'Only active in-person payments can be marked as received here' });
+    return res.status(409).json({ error: 'Apenas pagamentos presenciais ativos podem ser marcados como recebidos.' });
   }
   appointment.paymentStatus = 'paid';
   appointment.paidAt = new Date().toISOString();
@@ -452,9 +463,9 @@ app.patch('/api/appointments/:id/payment', authMiddleware, async (req, res) => {
 
 app.delete('/api/appointments/:id', authMiddleware, async (req, res) => {
   const appointment = state.appointments.find((item) => item.id === req.params.id);
-  if (!appointment) return res.status(404).json({ error: 'Appointment not found' });
+  if (!appointment) return res.status(404).json({ error: 'Agendamento não encontrado.' });
   if (appointment.paymentStatus === 'paid') {
-    return res.status(409).json({ error: 'This appointment has a confirmed payment. Refund it in Mercado Pago before cancelling.' });
+    return res.status(409).json({ error: 'Este agendamento já foi pago. Estorne no Mercado Pago antes de cancelar.' });
   }
   appointment.status = 'cancelled';
   appointment.paymentStatus = 'cancelled';
@@ -466,7 +477,7 @@ app.delete('/api/appointments/:id', authMiddleware, async (req, res) => {
 
 app.put('/api/services', authMiddleware, async (req, res) => {
   const { services } = req.body || {};
-  if (!Array.isArray(services)) return res.status(400).json({ error: 'Invalid service list' });
+  if (!Array.isArray(services)) return res.status(400).json({ error: 'Lista de serviços inválida.' });
   state.services = services;
   await persist();
   res.json(state.services);
@@ -484,6 +495,13 @@ app.put('/api/availability', authMiddleware, async (req, res) => {
 });
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
+
+// Sempre responde JSON para o frontend conseguir mostrar uma mensagem útil.
+app.use((error, req, res, next) => {
+  console.error('API error:', error);
+  if (res.headersSent) return next(error);
+  res.status(500).json({ error: 'Erro interno no servidor. Tente novamente.' });
+});
 
 async function initializeDatabase() {
   if (!db) return;

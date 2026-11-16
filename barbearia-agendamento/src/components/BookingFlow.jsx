@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
   Check,
@@ -6,13 +6,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock3,
-  Copy,
   QrCode,
   Scissors,
   Wallet,
 } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
-import { api } from '../api/client';
 import { BARBERSHOP_INFO, PAYMENT_METHODS, WEEKDAYS } from '../data/mocks';
 
 const STEPS = ['service', 'date', 'time', 'confirm'];
@@ -51,7 +48,6 @@ export default function BookingFlow({
   slotTemplate,
   clientName,
   onSchedule,
-  onPaymentComplete,
   onBack,
 }) {
   const dates = useMemo(
@@ -75,12 +71,15 @@ export default function BookingFlow({
   const [viewDate, setViewDate] = useState(firstMonth);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
-  const [paymentMethod, setPaymentMethod] = useState('onsite');
-  const [paymentAppointment, setPaymentAppointment] = useState(null);
-  const [paymentState, setPaymentState] = useState('pending');
-  const [copied, setCopied] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [showPixNotice, setShowPixNotice] = useState(false);
+  const requestIdRef = useRef(null);
+
+  const newRequestId = () => {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+    return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  };
 
   const stepIndex = STEPS.indexOf(step);
 
@@ -104,27 +103,6 @@ export default function BookingFlow({
 
   const daySlots = selectedDate ? slotsMap[selectedDate] || [] : [];
 
-  useEffect(() => {
-    if (!paymentAppointment?.id) return undefined;
-    let active = true;
-    const checkPayment = async () => {
-      try {
-        const result = await api.getPaymentStatus(paymentAppointment.id);
-        if (!active) return;
-        setPaymentState(result.paymentStatus || 'pending');
-        if (result.paymentStatus === 'paid') onPaymentComplete(paymentAppointment);
-      } catch {
-        /* Keep polling: the payment may still be confirmed by the webhook. */
-      }
-    };
-    checkPayment();
-    const interval = setInterval(checkPayment, 5000);
-    return () => {
-      active = false;
-      clearInterval(interval);
-    };
-  }, [paymentAppointment, onPaymentComplete]);
-
   const changeMonth = (delta) => {
     const next = new Date(viewDate.getFullYear(), viewDate.getMonth() + delta, 1);
     if (next < firstMonth || next > lastMonth) return;
@@ -135,8 +113,7 @@ export default function BookingFlow({
     setService(item);
     setSelectedDate(null);
     setSelectedTime(null);
-    setPaymentAppointment(null);
-    setPaymentState('pending');
+    requestIdRef.current = null;
     setError('');
     setStep('date');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -147,8 +124,7 @@ export default function BookingFlow({
     if (!availableSet.has(iso)) return;
     setSelectedDate(iso);
     setSelectedTime(null);
-    setPaymentAppointment(null);
-    setPaymentState('pending');
+    requestIdRef.current = null;
     setError('');
     setStep('time');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -164,8 +140,6 @@ export default function BookingFlow({
     if (step === 'service') return onBack();
     if (step === 'date') return changeStep('service');
     if (step === 'time') return changeStep('date');
-    setPaymentAppointment(null);
-    setPaymentState('pending');
     return changeStep('time');
   };
 
@@ -176,54 +150,65 @@ export default function BookingFlow({
     return now.getHours() > hour || (now.getHours() === hour && now.getMinutes() >= minute);
   };
 
+  const friendlyError = (err) => {
+    const message = err?.message || '';
+    if (/no longer available|não está mais disponível|já foi reservado/i.test(message)) {
+      return 'Esse horário acabou de ser reservado. Escolha outro horário.';
+    }
+    if (/invalid service|serviço inválido/i.test(message)) {
+      return 'O serviço selecionado foi atualizado. Volte e escolha novamente.';
+    }
+    if (!err?.status || err.status >= 500) {
+      return 'Não foi possível concluir o agendamento agora. Tente novamente em instantes.';
+    }
+    return message || 'Não foi possível concluir o agendamento. Tente novamente.';
+  };
+
   const handleConfirm = async () => {
     if (submitting || !service || !selectedDate || !selectedTime) return;
     setSubmitting(true);
     setError('');
+    if (!requestIdRef.current) requestIdRef.current = newRequestId();
+    const payload = {
+      service,
+      date: selectedDate,
+      time: selectedTime,
+      paymentMethod: 'onsite',
+      requestId: requestIdRef.current,
+    };
+
     try {
-      const appointment = await onSchedule({
-        service,
-        date: selectedDate,
-        time: selectedTime,
-        paymentMethod,
-      });
-      if (paymentMethod === 'pix') {
-        setPaymentAppointment(appointment);
-        setPaymentState('pending');
+      let lastError;
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+          await onSchedule(payload);
+          lastError = null;
+          break;
+        } catch (err) {
+          lastError = err;
+          const retryable = !err?.status || err.status >= 500;
+          if (!retryable || attempt === 1) break;
+          await new Promise((resolve) => { setTimeout(resolve, 900); });
+        }
       }
+      if (lastError) throw lastError;
     } catch (err) {
-      const message = err.message || '';
-      setError(
-        message.includes('Online PIX is not configured')
-          ? 'O pagamento online por PIX não está disponível agora. Escolha pagar na barbearia.'
-          : message.includes('no longer available')
-            ? 'Esse horário acabou de ser reservado. Escolha outro horário.'
-            : message || 'Não foi possível concluir o agendamento. Tente novamente.',
-      );
+      const message = err?.message || '';
+      const conflict = err?.status === 409
+        || /no longer available|não está mais disponível|já foi reservado/i.test(message);
+      setError(friendlyError(err));
+      if (conflict) {
+        requestIdRef.current = null;
+        setSelectedTime(null);
+        setStep('time');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     } finally {
       setSubmitting(false);
     }
   };
 
-  const resetPix = () => {
-    setPaymentAppointment(null);
-    setPaymentState('pending');
-    setSelectedTime(null);
-    changeStep('time');
-  };
-
-  const copyPix = async () => {
-    try {
-      await navigator.clipboard.writeText(paymentAppointment.pix.qrData);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2200);
-    } catch {
-      setError('Não foi possível copiar o código. Selecione o texto manualmente.');
-    }
-  };
-
   const today = toISO(new Date());
-  const pixFailed = ['expired', 'failed', 'cancelled'].includes(paymentState);
 
   return (
     <div className="ph-wizard">
@@ -405,6 +390,12 @@ export default function BookingFlow({
               <span className="font-heading text-[color:var(--brand-bright)]">{service?.name}</span>
             </p>
 
+            {error && (
+              <p className="mx-auto mb-5 max-w-lg text-center text-sm text-[color:var(--danger)]" role="alert">
+                {error}
+              </p>
+            )}
+
             {template.length === 0 ? (
               <div className="py-12 text-center">
                 <p className="text-lg text-[color:var(--muted)]">
@@ -425,8 +416,7 @@ export default function BookingFlow({
                           type="button"
                           onClick={() => {
                             setSelectedTime(time);
-                            setPaymentAppointment(null);
-                            setPaymentState('pending');
+                            requestIdRef.current = null;
                             changeStep('confirm');
                           }}
                           className={`ph-slot available ${selectedTime === time ? 'selected' : ''}`}
@@ -469,133 +459,75 @@ export default function BookingFlow({
               Confirme seu <span className="text-[color:var(--brand-bright)]">Agendamento</span>
             </h2>
 
-            {paymentAppointment ? (
-              <div className="ph-summary space-y-4">
-                <div className="text-center">
-                  <div className="ph-status-icon !mb-3 !h-14 !w-14">
-                    <QrCode className="h-7 w-7" />
-                  </div>
-                  <h3 className="text-display text-2xl text-white">Pague com PIX</h3>
-                  <p className="mt-1 text-sm leading-relaxed text-[color:var(--muted)]">
-                    Escaneie o QR Code ou copie o código. A confirmação chega automaticamente após o pagamento.
-                  </p>
-                </div>
-
-                {paymentAppointment.pix?.qrData && (
-                  <div className="ph-pix-box">
-                    <QRCodeSVG value={paymentAppointment.pix.qrData} size={200} level="M" />
-                  </div>
-                )}
-
-                {paymentAppointment.pix?.qrData && (
-                  <div className="space-y-2">
-                    <textarea
-                      readOnly
-                      value={paymentAppointment.pix.qrData}
-                      className="ph-pix-code"
-                      aria-label="Código PIX copia e cola"
-                    />
-                    <button type="button" onClick={copyPix} className="ph-btn-outline w-full">
-                      <Copy className="h-4 w-4" /> {copied ? 'Código copiado!' : 'Copiar código PIX'}
-                    </button>
-                  </div>
-                )}
-
-                <p className="text-center text-xs text-[color:var(--muted)]">
-                  No celular, copie o código e use um app de pagamento compatível.
-                </p>
-
-                <p
-                  className={`ph-pix-status ${paymentState === 'paid' ? 'paid' : pixFailed ? 'error' : ''}`}
-                  aria-live="polite"
-                >
-                  {paymentState === 'paid'
-                    ? 'Pagamento confirmado!'
-                    : pixFailed
-                      ? 'Este PIX expirou ou foi recusado. Escolha outro horário.'
-                      : 'Aguardando confirmação do pagamento...'}
-                </p>
-
-                {pixFailed && (
-                  <button type="button" onClick={resetPix} className="ph-btn-outline w-full">
-                    Escolher outro horário
-                  </button>
-                )}
+            <dl className="ph-summary">
+              <div className="ph-summary-row">
+                <dt>Cliente</dt>
+                <dd className="text-white">{clientName}</dd>
               </div>
-            ) : (
-              <>
-                <dl className="ph-summary">
-                  <div className="ph-summary-row">
-                    <dt>Cliente</dt>
-                    <dd className="text-white">{clientName}</dd>
-                  </div>
-                  <div className="ph-summary-row">
-                    <dt>Serviço</dt>
-                    <dd className="max-w-[60%] text-white">
-                      {service.name}
-                      {service.note && (
-                        <span className="mt-1 block text-xs font-normal leading-4 text-[color:var(--muted)]">
-                          {service.note}
-                        </span>
-                      )}
-                    </dd>
-                  </div>
-                  <div className="ph-summary-row">
-                    <dt>Data</dt>
-                    <dd className="text-white">{formatDate(selectedDate)}</dd>
-                  </div>
-                  <div className="ph-summary-row">
-                    <dt>Horário</dt>
-                    <dd className="text-white">{selectedTime}</dd>
-                  </div>
-                  <div className="ph-summary-row">
-                    <dt>Duração</dt>
-                    <dd className="text-white">{service.duration} min</dd>
-                  </div>
-                  <div className="ph-summary-row">
-                    <dt>Endereço</dt>
-                    <dd className="max-w-[55%] text-sm text-white">{BARBERSHOP_INFO.address}</dd>
-                  </div>
-                  <div className="ph-summary-row items-center">
-                    <dt>Valor</dt>
-                    <dd className="ph-summary-total">R$ {formatPrice(service.price)}</dd>
-                  </div>
-                </dl>
+              <div className="ph-summary-row">
+                <dt>Serviço</dt>
+                <dd className="max-w-[60%] text-white">
+                  {service.name}
+                  {service.note && (
+                    <span className="mt-1 block text-xs font-normal leading-4 text-[color:var(--muted)]">
+                      {service.note}
+                    </span>
+                  )}
+                </dd>
+              </div>
+              <div className="ph-summary-row">
+                <dt>Data</dt>
+                <dd className="text-white">{formatDate(selectedDate)}</dd>
+              </div>
+              <div className="ph-summary-row">
+                <dt>Horário</dt>
+                <dd className="text-white">{selectedTime}</dd>
+              </div>
+              <div className="ph-summary-row">
+                <dt>Duração</dt>
+                <dd className="text-white">{service.duration} min</dd>
+              </div>
+              <div className="ph-summary-row">
+                <dt>Endereço</dt>
+                <dd className="max-w-[55%] text-sm text-white">{BARBERSHOP_INFO.address}</dd>
+              </div>
+              <div className="ph-summary-row items-center">
+                <dt>Valor</dt>
+                <dd className="ph-summary-total">R$ {formatPrice(service.price)}</dd>
+              </div>
+            </dl>
 
-                <div className="ph-summary !py-4">
-                  <p className="font-heading mb-3 text-sm uppercase tracking-wider text-[color:var(--muted)]">
-                    Como prefere pagar?
-                  </p>
-                  <div className="ph-payment-grid">
-                    {PAYMENT_METHODS.map((method) => {
-                      const active = paymentMethod === method.id;
-                      return (
-                        <button
-                          key={method.id}
-                          type="button"
-                          onClick={() => setPaymentMethod(method.id)}
-                          className={`ph-payment-option ${active ? 'active' : ''}`}
-                          aria-pressed={active}
-                        >
-                          <span className="flex items-center gap-2">
-                            {method.id === 'pix'
-                              ? <QrCode className="h-4 w-4 text-[color:var(--brand-bright)]" />
-                              : <Wallet className="h-4 w-4 text-[color:var(--brand-bright)]" />}
-                            <strong>{method.label}</strong>
-                          </span>
-                          <small>{method.hint}</small>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <p className="mt-3 text-xs leading-relaxed text-[color:var(--muted)]">
-                    {paymentMethod === 'pix'
-                      ? 'O horário fica reservado por 30 minutos enquanto o PIX é pago.'
-                      : 'O pagamento é feito na barbearia, no dia do atendimento.'}
-                  </p>
-                </div>
-              </>
-            )}
+            <div className="ph-summary !py-4">
+              <p className="font-heading mb-3 text-sm uppercase tracking-wider text-[color:var(--muted)]">
+                Como prefere pagar?
+              </p>
+              <div className="ph-payment-grid">
+                {PAYMENT_METHODS.map((method) => {
+                  const isPix = method.id === 'pix';
+                  return (
+                    <button
+                      key={method.id}
+                      type="button"
+                      onClick={() => { if (isPix) setShowPixNotice(true); }}
+                      className={`ph-payment-option ${isPix ? '' : 'active'}`}
+                      aria-pressed={!isPix}
+                    >
+                      <span className="flex w-full items-center gap-2">
+                        {isPix
+                          ? <QrCode className="h-4 w-4 text-[color:var(--brand-bright)]" />
+                          : <Wallet className="h-4 w-4 text-[color:var(--brand-bright)]" />}
+                        <strong>{method.label}</strong>
+                        {isPix && <span className="ph-dev-badge">Em desenvolvimento</span>}
+                      </span>
+                      <small>{method.hint}</small>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-3 text-xs leading-relaxed text-[color:var(--muted)]">
+                O pagamento presencial é feito na barbearia, no dia do atendimento. O PIX online ainda está em desenvolvimento.
+              </p>
+            </div>
 
             {error && (
               <p className="mx-auto mb-4 max-w-lg text-center text-sm text-[color:var(--danger)]" role="alert">
@@ -603,33 +535,64 @@ export default function BookingFlow({
               </p>
             )}
 
-            {!paymentAppointment && (
-              <div className="mx-auto max-w-lg">
-                <button
-                  type="button"
-                  onClick={handleConfirm}
-                  disabled={submitting}
-                  className="ph-btn-brand w-full py-4 text-lg"
-                >
-                  {submitting ? (
-                    <>Salvando...</>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="h-6 w-6" />
-                      {paymentMethod === 'pix' ? 'Gerar PIX' : 'Confirmar Atendimento'}
-                    </>
-                  )}
+            <div className="mx-auto max-w-lg">
+              <button
+                type="button"
+                onClick={handleConfirm}
+                disabled={submitting}
+                className="ph-btn-brand w-full py-4 text-lg"
+              >
+                {submitting ? (
+                  <>Salvando...</>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-6 w-6" />
+                    Confirmar Atendimento
+                  </>
+                )}
+              </button>
+              <div className="mt-5 flex justify-center">
+                <button type="button" onClick={goBack} disabled={submitting} className="ph-btn-ghost">
+                  <ArrowLeft className="h-4 w-4" /> Voltar
                 </button>
-                <div className="mt-5 flex justify-center">
-                  <button type="button" onClick={goBack} disabled={submitting} className="ph-btn-ghost">
-                    <ArrowLeft className="h-4 w-4" /> Voltar
-                  </button>
-                </div>
               </div>
-            )}
+            </div>
           </section>
         )}
       </main>
+
+      {showPixNotice && (
+        <div
+          className="ph-modal-backdrop"
+          role="presentation"
+          onClick={() => setShowPixNotice(false)}
+        >
+          <div
+            className="ph-modal-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="pix-dev-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="ph-status-icon">
+              <QrCode className="h-8 w-8" />
+            </div>
+            <h3 id="pix-dev-title" className="text-display text-3xl uppercase text-white">
+              Em desenvolvimento
+            </h3>
+            <p className="mt-2 text-sm leading-relaxed text-[color:var(--muted)]">
+              O pagamento por QR Code / PIX ainda está em desenvolvimento. Escolha pagar presencialmente na barbearia.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowPixNotice(false)}
+              className="ph-btn-brand mt-5 w-full py-3.5"
+            >
+              Entendi
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

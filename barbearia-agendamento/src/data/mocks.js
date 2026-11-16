@@ -43,7 +43,7 @@ export const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
 export const PAYMENT_METHODS = [
   { id: 'onsite', label: 'Presencial', hint: 'Pagar na barbearia' },
-  { id: 'pix', label: 'PIX', hint: 'Pagar agora online' },
+  { id: 'pix', label: 'PIX', hint: 'Em desenvolvimento' },
 ];
 
 export const GALLERY = [

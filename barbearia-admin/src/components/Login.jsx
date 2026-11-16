@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ArrowRight, Loader2, Lock } from 'lucide-react';
 import { api } from '../api/client';
 
 export default function Login({ onSuccess }) {
@@ -15,37 +16,64 @@ export default function Login({ onSuccess }) {
       api.setToken(token);
       onSuccess();
     } catch (err) {
-      setError(err.message || 'Falha no login');
+      setError(err.message || 'Falha no login.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <section className="min-h-screen graffiti-wall flex items-center justify-center px-6 py-12">
-      <div className="w-full max-w-sm border-2 border-zinc-800 bg-black/70 p-8 space-y-6">
-        <header className="space-y-1">
-          <h2 className="font-display text-3xl text-white">Área do Barbeiro</h2>
-          <p className="text-zinc-400 text-sm">Acesso restrito.</p>
-        </header>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Senha"
-            className="w-full px-4 py-3 border-2 border-zinc-700 bg-black text-white placeholder-zinc-600 focus:outline-none focus:border-white transition"
+    <section className="admin-shell flex items-center justify-center px-5 py-10">
+      <div className="admin-login-card">
+        <div className="flex flex-col items-center text-center">
+          <img
+            src="/brand/gd-logo.jpg"
+            alt="Logo G dos Cortes"
+            className="admin-logo mb-4"
+            style={{ width: '5rem', height: '5rem' }}
           />
-          {error && <p className="text-red-400 text-sm">{error}</p>}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full px-4 py-3 bg-white text-black font-bold font-display border-2 border-white hover:bg-black hover:text-white disabled:bg-zinc-800 disabled:text-zinc-500 transition"
-          >
-            {loading ? 'Entrando...' : 'Entrar'}
+          <span className="admin-kicker">Acesso restrito</span>
+          <h1 className="font-display mt-2 text-4xl leading-none text-white">Painel do Barbeiro</h1>
+          <p className="mt-2 text-sm text-[color:var(--muted)]">
+            G dos Cortes • Estilo, qualidade e respeito.
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="mt-7 space-y-4">
+          <div>
+            <label htmlFor="admin-password" className="admin-label">Senha</label>
+            <div className="relative">
+              <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--muted)]" />
+              <input
+                id="admin-password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Digite a senha do painel"
+                autoComplete="current-password"
+                autoFocus
+                className="admin-input with-icon"
+              />
+            </div>
+          </div>
+
+          {error && <p className="text-sm text-[color:var(--danger)]" role="alert">{error}</p>}
+
+          <button type="submit" disabled={loading} className="admin-btn w-full py-3">
+            {loading ? (
+              <><Loader2 className="h-4 w-4 animate-spin" /> Entrando...</>
+            ) : (
+              <>Entrar <ArrowRight className="h-4 w-4" /></>
+            )}
           </button>
         </form>
-        <p className="text-xs text-zinc-500 text-center">Use a senha configurada no servidor.</p>
+
+        <div className="mt-6 border-t border-white/5 pt-5 text-center">
+          <p className="text-xs text-[color:var(--muted)]">Acesso exclusivo do barbeiro.</p>
+          <p className="mt-1 text-[0.65rem] uppercase tracking-[.14em] text-[color:var(--muted)]">
+            Use a senha configurada no servidor.
+          </p>
+        </div>
       </div>
     </section>
   );

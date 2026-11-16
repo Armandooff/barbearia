@@ -5,19 +5,46 @@ function setToken(t) { if (t) localStorage.setItem('admin_token', t); else local
 
 async function request(path, options = {}) {
   const token = getToken();
-  const res = await fetch(BASE + path, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: 'Bearer ' + token } : {}),
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
-  if (res.status === 401) { setToken(null); throw new Error('Não autorizado'); }
+  let res;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20000);
+  try {
+    res = await fetch(BASE + path, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: 'Bearer ' + token } : {}),
+        ...(options.headers || {}),
+      },
+      ...options,
+      signal: controller.signal,
+    });
+  } catch {
+    const error = new Error('Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.');
+    error.status = 0;
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  if (res.status === 401) {
+    setToken(null);
+    const error = new Error('Sessão expirada. Entre novamente.');
+    error.status = 401;
+    throw error;
+  }
   if (!res.ok) {
-    let msg = 'Erro na requisição';
-    try { const j = await res.json(); msg = j.error || msg; } catch {}
-    throw new Error(msg);
+    let msg = res.status >= 500
+      ? 'Não foi possível concluir a solicitação. Tente novamente em instantes.'
+      : 'Erro na requisição';
+    try {
+      const body = await res.json();
+      msg = body.error || msg;
+    } catch {
+      /* resposta sem JSON */
+    }
+    const error = new Error(msg);
+    error.status = res.status;
+    throw error;
   }
   return res.json();
 }

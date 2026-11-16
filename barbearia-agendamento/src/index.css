@@ -633,6 +633,42 @@ a.ph-info-card:hover { border-color: rgba(77, 139, 255, 0.6); background: rgba(2
 .ph-payment-option small { color: var(--muted); font-size: 0.78rem; }
 .ph-payment-option.active { border-color: var(--brand-bright); background: rgba(29, 92, 255, 0.12); }
 .ph-payment-option.active strong { color: #a9c8ff; }
+.ph-dev-badge {
+  margin-left: auto;
+  padding: 0.15rem 0.4rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--muted);
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.ph-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(2, 4, 9, 0.82);
+  backdrop-filter: blur(8px);
+  animation: fade-in 0.2s ease both;
+}
+.ph-modal-panel {
+  width: 100%;
+  max-width: 26rem;
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  background: linear-gradient(160deg, #131c2d, #070a11);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.65), 0 0 40px rgba(29, 92, 255, 0.12);
+  padding: 1.75rem;
+  text-align: center;
+  animation: pop-in 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
 
 .ph-pix-box { width: fit-content; margin: 0 auto; padding: 0.75rem; border-radius: 0.5rem; background: #fff; }
 .ph-pix-code {
